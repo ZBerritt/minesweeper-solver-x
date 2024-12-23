@@ -3,15 +3,15 @@
 #include <cstdint>
 
 struct Position {
-    uint16_t x;
-    uint16_t y;
-    Position(uint16_t xx, uint16_t yy) : x(xx), y(yy) {}
+    uint32_t x;
+    uint32_t y;
+    Position(uint32_t xx = 0, uint32_t yy = 0) : x(xx), y(yy) {} // Added default constructor
 };
 
 struct Dimension {
-    uint16_t width;
-    uint16_t height;
-    Dimension(uint16_t w, uint16_t h) : width(w), height(h) {}
+    uint32_t width;
+    uint32_t height;
+    Dimension(uint32_t w = 0, uint32_t h = 0) : width(w), height(h) {} // Added default constructor
 };
 
 struct Pixel {
@@ -22,11 +22,18 @@ struct Pixel {
     Pixel(uint8_t r, uint8_t g, uint8_t b) : red(r), green(g), blue(b) {}
 };
 
-struct Screenshot {
-    Position pos;
-    Dimension dim;
-    std::vector<std::vector<Pixel>> pixels;
-    Screenshot(Position p, Dimension d,std::vector<std::vector<Pixel>> px) : pos(p), dim(d), pixels(px) {}
+class Screenshot {
+public:
+    Screenshot();
+    Screenshot(Position p, Dimension d); // Removed const from parameters
+    void take();
+    Position get_position() const;  // Removed unnecessary const
+    Dimension get_dimension() const; // Removed unnecessary const
+    Pixel get_pixel(uint32_t x, uint32_t y) const; // Added const correctness
+private:
+    Position pos;  // Removed const
+    Dimension dim; // Removed const
+    std::vector<Pixel> pixels;
 };
 
 // Board Colors
@@ -46,13 +53,6 @@ struct Screenshot {
 
 // Screen utils
 
-// Take a screenshot of a specific part of the screen
-Screenshot screenshot(const Position& pos, const Dimension& dim);
-
-// Take a screenshot of the entire screen
-Screenshot screenshot();
-
-// Move the mouse to this position
 void move_mouse(Position pos);
 
 void left_click();

@@ -12,7 +12,7 @@ enum Status {
 
 class Game {
     public:
-        Game(std::shared_ptr<Position> pos,std::shared_ptr<Dimension> board_dimensions,std::shared_ptr<Dimension> box_dimensions);
+        Game(const Position& pos, const Dimension& board_dimensions, const Dimension& box_dimensions);
         std::shared_ptr<Board> get_board();
         Status status();
         void update();
@@ -20,12 +20,13 @@ class Game {
         void flag(int x, int y);
 
     private:
-        std::shared_ptr<Position> position;
-        std::shared_ptr<Dimension> board_dimensions;
-        std::shared_ptr<Dimension> box_dimensions;
+        Screenshot screen;
+        const Position position;
+        const Dimension board_dimensions;
+        const Dimension box_dimensions;
         std::shared_ptr<Board> board;
         Position box_mouse_position(int x, int y);
-        int tile_value(int x, int y, const Screenshot& screen);
+        int tile_value(int x, int y, Screenshot& screen);
         std::pair<Position, Dimension> tile_range(int x, int y);
 };
 

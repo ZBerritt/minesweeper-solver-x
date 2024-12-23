@@ -1,39 +1,110 @@
-#include "screen.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "screen.h"
 
-// Helper function to capture a screenshot of a specified screen area
-Screenshot screenshot(const Position& pos, const Dimension& dim) {
-    // Get specs of the screenshot
-    uint16_t x = pos.x;
-    uint16_t y = pos.y;
-    uint16_t width = dim.width;
-    uint16_t height = dim.height;
-       
-    // Hook windows API
-    HDC hScreenDC = GetDC(nullptr);
-    HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-    HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, width, height);
-    HBITMAP hOldBitmap = static_cast<HBITMAP>(SelectObject(hMemoryDC, hBitmap));
-    BitBlt(hMemoryDC, x, y, width, height, hScreenDC, 0, 0, SRCCOPY);
-    hBitmap = static_cast<HBITMAP>(SelectObject(hMemoryDC, hOldBitmap));
-
-
-    DeleteDC(hMemoryDC);
-    DeleteDC(hScreenDC);
-    return Screenshot(pos, dim, pixels);
+Screenshot::Screenshot() : Screenshot(
+    Position(0, 0),
+    Dimension(
+        static_cast<uint32_t>(GetSystemMetrics(SM_CXSCREEN)),
+        static_cast<uint32_t>(GetSystemMetrics(SM_CYSCREEN))
+    )
+) {
 }
 
-// Helper function to capture the entire screen
-Screenshot screenshot() {
-    // Get the screen dimensions
-    uint16_t screenWidth = static_cast<uint16_t>(GetSystemMetrics(SM_CXSCREEN));
-    uint16_t screenHeight = static_cast<uint16_t>(GetSystemMetrics(SM_CYSCREEN));
+Screenshot::Screenshot(Position p, Dimension d) : pos(p), dim(d) {
+    take();
+}
 
-    Position pos = {0, 0};
-    Dimension dim = {screenWidth, screenHeight};
+void Screenshot::take() {
+    if (dim.width == 0 || dim.height == 0) {
+        return; // Prevent invalid dimensions
+    }
 
-    return screenshot(pos, dim);
+    // Extract constants
+    uint32_t x = pos.x;
+    uint32_t y = pos.y;
+    uint32_t width = dim.width;
+    uint32_t height = dim.height;
+
+    // Clear and reserve space for the screenshot
+    pixels.clear();
+    pixels.reserve(width * height);
+
+    // Create device contexts and bitmap
+    HDC hScreenDC = GetDC(nullptr);
+    if (!hScreenDC) return;
+
+    HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+    if (!hMemoryDC) {
+        ReleaseDC(nullptr, hScreenDC);
+        return;
+    }
+
+    HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, width, height);
+    if (!hBitmap) {
+        DeleteDC(hMemoryDC);
+        ReleaseDC(nullptr, hScreenDC);
+        return;
+    }
+
+    HBITMAP hOldBitmap = static_cast<HBITMAP>(SelectObject(hMemoryDC, hBitmap));
+
+    // Copy screen to bitmap
+    BitBlt(hMemoryDC, 0, 0, width, height, hScreenDC, x, y, SRCCOPY);
+
+    // Prepare bitmap info
+    BITMAPINFOHEADER bi = {};
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = width;
+    bi.biHeight = -static_cast<int32_t>(height); // Negative for top-down bitmap
+    bi.biPlanes = 1;
+    bi.biBitCount = 24; // 24 bits per pixel (RGB)
+    bi.biCompression = BI_RGB;
+
+    // Calculate proper row stride (must be DWORD-aligned)
+    int stride = ((width * 3 + 3) & ~3);
+    std::vector<uint8_t> bitmapData(stride * height);
+
+    // Extract bitmap data
+    if (GetDIBits(hMemoryDC, hBitmap, 0, height, bitmapData.data(),
+        reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS)) {
+
+        // Convert bitmap data to pixel format (R, G, B)
+        pixels.clear();
+        pixels.reserve(width * height);
+
+        for (uint32_t y = 0; y < height; ++y) {
+            for (uint32_t x = 0; x < width; ++x) {
+                size_t offset = y * stride + x * 3;
+                pixels.emplace_back(
+                    bitmapData[offset + 2],  // R
+                    bitmapData[offset + 1],  // G
+                    bitmapData[offset]       // B
+                );
+            }
+        }
+    }
+
+    // Cleanup GDI objects
+    SelectObject(hMemoryDC, hOldBitmap);
+    DeleteObject(hBitmap);
+    DeleteDC(hMemoryDC);
+    ReleaseDC(nullptr, hScreenDC);
+}
+
+Position Screenshot::get_position() const {
+    return pos;
+}
+
+Dimension Screenshot::get_dimension() const {
+    return dim;
+}
+
+Pixel Screenshot::get_pixel(uint32_t x, uint32_t y) const {
+    if (x >= dim.width || y >= dim.height || pixels.empty()) {
+        return Pixel(); // Return black pixel for invalid coordinates
+    }
+    return pixels[(y * dim.width) + x];
 }
 
 // Move the mouse to a specific position on the screen
@@ -53,7 +124,7 @@ void left_click() {
     inputUp.mi.dwFlags = MOUSEEVENTF_LEFTUP;
 
     // Send both events (press and release)
-    INPUT inputs[] = {inputDown, inputUp};
+    INPUT inputs[] = { inputDown, inputUp };
     SendInput(2, inputs, sizeof(INPUT));
 }
 
@@ -70,6 +141,6 @@ void right_click() {
     inputUp.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
 
     // Send both events (press and release)
-    INPUT inputs[] = {inputDown, inputUp};
+    INPUT inputs[] = { inputDown, inputUp };
     SendInput(2, inputs, sizeof(INPUT));
 }
