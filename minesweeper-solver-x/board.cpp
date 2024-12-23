@@ -45,13 +45,18 @@ std::vector<Tile> Board::get_undiscovered_tiles() {
 }
 
 void Board::print() {
+    std::cout << std::endl;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             Tile tile = boxes[i][j];
             if (tile.value == UNDISCOVERED) {
                 std::cout << "-";
-            } else if (tile.value == MINE) {
+            }
+            else if (tile.value == MINE) {
                 std::cout << "F";
+            }
+            else if (tile.value == UNKNOWN) {
+                std::cout << "?";
             } else {
                 std::cout << boxes[i][j].value;
             }

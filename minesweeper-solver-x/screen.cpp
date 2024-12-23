@@ -1,5 +1,3 @@
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include "screen.h"
 
 Screenshot::Screenshot() : Screenshot(
@@ -17,90 +15,72 @@ Screenshot::Screenshot(Position p, Dimension d) : pos(p), dim(d) {
 
 void Screenshot::take() {
     if (dim.width == 0 || dim.height == 0) {
-        return; // Prevent invalid dimensions
+        throw ScreenshotException("Invalid dimensions: width and height must be greater than 0");
     }
 
-    // Extract constants
-    uint32_t x = pos.x;
-    uint32_t y = pos.y;
-    uint32_t width = dim.width;
-    uint32_t height = dim.height;
+    GdiResources resources;
 
-    // Clear and reserve space for the screenshot
-    pixels.clear();
-    pixels.reserve(width * height);
-
-    // Create device contexts and bitmap
-    HDC hScreenDC = GetDC(nullptr);
-    if (!hScreenDC) return;
-
-    HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-    if (!hMemoryDC) {
-        ReleaseDC(nullptr, hScreenDC);
-        return;
+    // Initialize GDI resources
+    resources.screenDC = GetDC(nullptr);
+    if (!resources.screenDC) {
+        throw ScreenshotException("Failed to get screen DC");
     }
 
-    HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, width, height);
-    if (!hBitmap) {
-        DeleteDC(hMemoryDC);
-        ReleaseDC(nullptr, hScreenDC);
-        return;
+    resources.memoryDC = CreateCompatibleDC(resources.screenDC);
+    if (!resources.memoryDC) {
+        throw ScreenshotException("Failed to create memory DC");
     }
 
-    HBITMAP hOldBitmap = static_cast<HBITMAP>(SelectObject(hMemoryDC, hBitmap));
+    resources.bitmap = CreateCompatibleBitmap(resources.screenDC, dim.width, dim.height);
+    if (!resources.bitmap) {
+        throw ScreenshotException("Failed to create compatible bitmap");
+    }
+
+    resources.oldBitmap = static_cast<HBITMAP>(SelectObject(resources.memoryDC, resources.bitmap));
 
     // Copy screen to bitmap
-    BitBlt(hMemoryDC, 0, 0, width, height, hScreenDC, x, y, SRCCOPY);
+    if (!BitBlt(resources.memoryDC, 0, 0, dim.width, dim.height,
+        resources.screenDC, pos.x, pos.y, SRCCOPY)) {
+        throw ScreenshotException("Failed to copy screen content");
+    }
 
     // Prepare bitmap info
     BITMAPINFOHEADER bi = {};
     bi.biSize = sizeof(BITMAPINFOHEADER);
-    bi.biWidth = width;
-    bi.biHeight = -static_cast<int32_t>(height); // Negative for top-down bitmap
+    bi.biWidth = dim.width;
+    bi.biHeight = -static_cast<int32_t>(dim.height); // Negative for top-down bitmap
     bi.biPlanes = 1;
-    bi.biBitCount = 24; // 24 bits per pixel (RGB)
+    bi.biBitCount = 24;
     bi.biCompression = BI_RGB;
 
-    // Calculate proper row stride (must be DWORD-aligned)
-    int stride = ((width * 3 + 3) & ~3);
-    std::vector<uint8_t> bitmapData(stride * height);
+    // Calculate stride and allocate bitmap data
+    int stride = ((dim.width * 3 + 3) & ~3);
+    std::vector<uint8_t> bitmapData(stride * dim.height);
 
-    // Extract bitmap data
-    if (GetDIBits(hMemoryDC, hBitmap, 0, height, bitmapData.data(),
-        reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS)) {
-
-        // Convert bitmap data to pixel format (R, G, B)
-        pixels.clear();
-        pixels.reserve(width * height);
-
-        for (uint32_t y = 0; y < height; ++y) {
-            for (uint32_t x = 0; x < width; ++x) {
-                size_t offset = y * stride + x * 3;
-                pixels.emplace_back(
-                    bitmapData[offset + 2],  // R
-                    bitmapData[offset + 1],  // G
-                    bitmapData[offset]       // B
-                );
-            }
-        }
+    // Get bitmap data
+    if (!GetDIBits(resources.memoryDC, resources.bitmap, 0, dim.height,
+        bitmapData.data(), reinterpret_cast<BITMAPINFO*>(&bi),
+        DIB_RGB_COLORS)) {
+        throw ScreenshotException("Failed to get bitmap data");
     }
 
-    // Cleanup GDI objects
-    SelectObject(hMemoryDC, hOldBitmap);
-    DeleteObject(hBitmap);
-    DeleteDC(hMemoryDC);
-    ReleaseDC(nullptr, hScreenDC);
+    // Process bitmap data
+    pixels.clear();
+    pixels.reserve(dim.width * dim.height);
+
+    for (uint32_t y = 0; y < dim.height; ++y) {
+        for (uint32_t x = 0; x < dim.width; ++x) {
+            size_t offset = y * stride + x * 3;
+            pixels.emplace_back(
+                bitmapData[offset + 2],  // R
+                bitmapData[offset + 1],  // G
+                bitmapData[offset]       // B
+            );
+        }
+    }
 }
 
-Position Screenshot::get_position() const {
-    return pos;
-}
-
-Dimension Screenshot::get_dimension() const {
-    return dim;
-}
-
-Pixel Screenshot::get_pixel(uint32_t x, uint32_t y) const {
+const Pixel& Screenshot::get_pixel(uint32_t x, uint32_t y) const {
     if (x >= dim.width || y >= dim.height || pixels.empty()) {
         return Pixel(); // Return black pixel for invalid coordinates
     }

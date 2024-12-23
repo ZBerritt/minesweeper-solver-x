@@ -1,6 +1,16 @@
+// screen.h
 #pragma once
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
 #include <vector>
+#include <stdexcept>
 #include <cstdint>
+
+class ScreenshotException : public std::runtime_error {
+public:
+    explicit ScreenshotException(const char* message) : std::runtime_error(message) {}
+};
 
 struct Position {
     uint32_t x;
@@ -25,31 +35,37 @@ struct Pixel {
 class Screenshot {
 public:
     Screenshot();
-    Screenshot(Position p, Dimension d); // Removed const from parameters
+    Screenshot(Position p, Dimension d);
     void take();
-    Position get_position() const;  // Removed unnecessary const
-    Dimension get_dimension() const; // Removed unnecessary const
-    Pixel get_pixel(uint32_t x, uint32_t y) const; // Added const correctness
+    Position get_position() const { return pos;  };
+    Dimension get_dimension() const { return dim; };
+    const Pixel& get_pixel(uint32_t x, uint32_t y) const;
+
 private:
-    Position pos;  // Removed const
-    Dimension dim; // Removed const
+    Position pos;
+    Dimension dim;
     std::vector<Pixel> pixels;
+
+    // RAII wrapper for GDI resources
+    struct GdiResources {
+        HDC screenDC;
+        HDC memoryDC;
+        HBITMAP bitmap;
+        HBITMAP oldBitmap;
+
+        GdiResources() : screenDC(nullptr), memoryDC(nullptr),
+            bitmap(nullptr), oldBitmap(nullptr) {
+        }
+
+        ~GdiResources() {
+            if (oldBitmap) SelectObject(memoryDC, oldBitmap);
+            if (bitmap) DeleteObject(bitmap);
+            if (memoryDC) DeleteDC(memoryDC);
+            if (screenDC) ReleaseDC(nullptr, screenDC);
+        }
+    };
 };
 
-// Board Colors
-#define LIGHT_UND Pixel(170, 215, 81)
-#define DARK_UND Pixel(162, 209, 73)
-#define LIGHT_EMPTY Pixel(224, 195, 163)
-#define DARK_EMPTY Pixel(211, 185, 157)
-#define BORDER Pixel(126, 164, 53)
-#define FLAG Pixel(242, 54, 7)
-#define RESULTS Pixel(77, 193, 249)
-#define NUM_ONE Pixel(25, 118, 210)
-#define NUM_TWO Pixel(55, 141, 59)
-#define NUM_THREE Pixel(211, 47, 47)
-#define NUM_FOUR Pixel(123, 31, 162)
-#define NUM_FIVE Pixel(255, 139, 0)
-#define NUM_SIX Pixel(30, 157, 169)
 
 // Screen utils
 

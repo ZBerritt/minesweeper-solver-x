@@ -2,8 +2,9 @@
 
 #include <vector>
 
-#define MINE -2
-#define UNDISCOVERED -1
+constexpr int UNDISCOVERED = -1;
+constexpr int MINE = -2;
+constexpr int UNKNOWN = -3;
 
 struct Tile {
     int x;

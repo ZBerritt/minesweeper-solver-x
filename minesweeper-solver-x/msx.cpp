@@ -6,10 +6,10 @@
 
 int main() {
     printf("Searching for game...");
-    std::unique_ptr<Game> game = find_game();
+    std::unique_ptr<Game> game = Game::find_game();
     while (game == nullptr) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
-        game = find_game();
+        game = Game::find_game();
     }
     Solver solver = Solver(game->get_board());
     while (game->status() == IN_PROGRESS) {
