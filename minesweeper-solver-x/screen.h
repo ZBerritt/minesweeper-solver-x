@@ -2,10 +2,12 @@
 #pragma once
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
+#define STRICT
 #include <windows.h>
 #include <vector>
 #include <stdexcept>
 #include <cstdint>
+
 
 class ScreenshotException : public std::runtime_error {
 public:
@@ -15,13 +17,13 @@ public:
 struct Position {
     uint32_t x;
     uint32_t y;
-    Position(uint32_t xx = 0, uint32_t yy = 0) : x(xx), y(yy) {} // Added default constructor
+    Position(uint32_t x = 0, uint32_t y = 0) : x(x), y(y) {}
 };
 
 struct Dimension {
     uint32_t width;
     uint32_t height;
-    Dimension(uint32_t w = 0, uint32_t h = 0) : width(w), height(h) {} // Added default constructor
+    Dimension(uint32_t w = 0, uint32_t h = 0) : width(w), height(h) {}
 };
 
 struct Pixel {
@@ -32,11 +34,11 @@ struct Pixel {
     Pixel(uint8_t r, uint8_t g, uint8_t b) : red(r), green(g), blue(b) {}
 };
 
-class Screenshot {
+class Screen {
 public:
-    Screenshot();
-    Screenshot(Position p, Dimension d);
-    void take();
+    Screen();
+    Screen(Position p, Dimension d);
+    void take_screenshot();
     Position get_position() const { return pos;  };
     Dimension get_dimension() const { return dim; };
     const Pixel& get_pixel(uint32_t x, uint32_t y) const;

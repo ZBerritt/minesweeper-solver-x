@@ -26,15 +26,14 @@ private:
     const Dimension board_dimensions;
     const Dimension box_dimensions;
 
-    Screenshot screen;
+    Screen screen;
     std::shared_ptr<Board> board;
 
     // Helper methods
     Position box_mouse_position(int x, int y) const;
-    int tile_value(int x, int y, const Screenshot& screen) const;
+    int tile_value(int x, int y) const;
     std::pair<Position, Dimension> tile_range(int x, int y) const;
 
-    // Lookup table for color classification
     static int classify_pixel(const Pixel& pixel);
 };
 

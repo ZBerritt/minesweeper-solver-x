@@ -1,19 +1,32 @@
+// screen.c
 #include "screen.h"
+#include <shellscalingapi.h>
 
-Screenshot::Screenshot() : Screenshot(
-    Position(0, 0),
-    Dimension(
-        static_cast<uint32_t>(GetSystemMetrics(SM_CXSCREEN)),
-        static_cast<uint32_t>(GetSystemMetrics(SM_CYSCREEN))
-    )
-) {
+Screen::Screen() {
+    // Get the primary monitor handle
+    HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
+
+    MONITORINFOEX monitorInfo{};
+    monitorInfo.cbSize = sizeof(MONITORINFOEX);
+    GetMonitorInfo(hMonitor, &monitorInfo);
+
+    // Get actual monitor resolution without DPI scaling
+    DEVMODE dm{};
+    dm.dmSize = sizeof(dm);
+    dm.dmDriverExtra = 0;
+    EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &dm);
+
+    // Initialize with actual physical pixels
+    pos = Position(0, 0);
+    dim = Dimension(
+        static_cast<uint32_t>(dm.dmPelsWidth),
+        static_cast<uint32_t>(dm.dmPelsHeight)
+    );
 }
 
-Screenshot::Screenshot(Position p, Dimension d) : pos(p), dim(d) {
-    take();
-}
+Screen::Screen(Position p, Dimension d) : pos(p), dim(d) {}
 
-void Screenshot::take() {
+void Screen::take_screenshot() {
     if (dim.width == 0 || dim.height == 0) {
         throw ScreenshotException("Invalid dimensions: width and height must be greater than 0");
     }
@@ -80,7 +93,7 @@ void Screenshot::take() {
     }
 }
 
-const Pixel& Screenshot::get_pixel(uint32_t x, uint32_t y) const {
+const Pixel& Screen::get_pixel(uint32_t x, uint32_t y) const {
     if (x >= dim.width || y >= dim.height || pixels.empty()) {
         return Pixel(); // Return black pixel for invalid coordinates
     }
