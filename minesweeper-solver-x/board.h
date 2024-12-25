@@ -20,6 +20,8 @@ class Board {
         Board(int w, int h);
         Tile get_tile(int x, int y);
         void set_tile(int x, int y, int val);
+        int get_height() const { return height; }
+		int get_width() const { return width; }
         std::vector<Tile> get_all_tiles();
         std::vector<Tile> get_undiscovered_tiles();
         std::vector<Tile> get_surrounding_tiles(Tile t);

@@ -25,7 +25,7 @@ int main() {
         for (Move move : moves) {
             if (move.action == FLAG_ACTION) {
 				game->get_board()->set_tile(move.x, move.y, MINE); // Manually set as mine for algorithm
-                game->flag(move.x, move.y);
+				//game->flag(move.x, move.y); // Commented out to prevent flagging
             }
             else if (move.action == CLICK_ACTION) {
                 game->click(move.x, move.y);

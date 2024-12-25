@@ -1,5 +1,4 @@
 #include <cmath>
-
 #include "game.h"
 
 static bool color_in_range(const Pixel& a, const Pixel& b, int range = 10) {
@@ -13,7 +12,7 @@ Game::Game(const Position& pos, const Dimension& board_dim, const Dimension& box
     , board_dimensions(board_dim)
     , box_dimensions(box_dim)
     , screen(pos, board_dim)
-    , board(std::make_shared<Board>(board_dim.width / box_dim.width, board_dim.height / box_dim.height))
+    , board(std::make_shared<Board>(board_dim.width / box_dim.width + 1, board_dim.height / box_dim.height + 1))
 {
     update();
 }
