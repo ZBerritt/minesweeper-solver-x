@@ -44,6 +44,60 @@ std::vector<Tile> Board::get_undiscovered_tiles() {
     return undiscovered;
 }
 
+std::vector<Tile> Board::get_surrounding_tiles(Tile t) {
+    std::vector<Tile> surrounding;
+    for (int i = t.y - 1; i <= t.y + 1; i++) {
+        for (int j = t.x - 1; j <= t.x + 1; j++) {
+            if (i >= 0 && i < height && j >= 0 && j < width) {
+                surrounding.push_back(boxes[i][j]);
+            }
+        }
+    }
+    return surrounding;
+}
+
+std::vector<Tile> Board::get_border_tiles() {
+    std::vector<Tile> border;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            Tile t = boxes[i][j];
+            if (t.value != UNDISCOVERED) {
+                std::vector<Tile> surrounding = get_surrounding_tiles(t);
+                for (Tile s : surrounding) {
+                    if (s.value == UNDISCOVERED) {
+                        border.push_back(t);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return border;
+}
+
+int Board::remaining_nearby_mines(Tile t) {
+    int remaining_mines = t.value;
+    std::vector<Tile> surrounding = get_surrounding_tiles(t);
+    for (Tile s : surrounding) {
+        if (s.value == MINE) {
+            remaining_mines--;
+        }
+    }
+    return remaining_mines;
+}
+
+int Board::discovered_count() {
+	int count = 0;
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			if (boxes[i][j].value != UNDISCOVERED) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
 void Board::print() {
     std::cout << std::endl;
     for (int i = 0; i < height; i++) {

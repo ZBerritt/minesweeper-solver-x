@@ -1,8 +1,4 @@
 #include <cmath>
-#include <algorithm>
-#include <iostream>
-#include <chrono>
-#include <thread>
 
 #include "game.h"
 

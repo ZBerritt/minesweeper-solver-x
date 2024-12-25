@@ -5,29 +5,38 @@
 #include "game.h"
 
 int main() {
-    printf("Searching for game...");
+    // Search
+    std::cout << "Searching for game..." << std::endl;
     std::unique_ptr<Game> game = Game::find_game();
     while (game == nullptr) {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         game = Game::find_game();
     }
+
+    // Start
+	std::cout << "Found game! Beginning solver..." << std::endl;
     Solver solver = Solver(game->get_board());
     while (game->status() == IN_PROGRESS) {
         game->get_board()->print();
         std::vector<Move> moves = solver.get_moves();
+		if (moves.empty()) {
+			break;
+		}
         for (Move move : moves) {
             if (move.action == FLAG_ACTION) {
+				game->get_board()->set_tile(move.x, move.y, MINE); // Manually set as mine for algorithm
                 game->flag(move.x, move.y);
             }
-            else {
+            else if (move.action == CLICK_ACTION) {
                 game->click(move.x, move.y);
             }
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(850));
         game->update();
     }
-
-    if (game->status() == WON) {
+	if (game->status() == IN_PROGRESS) {
+		std::cout << "I'm stuck..." << std::endl;
+	} else if (game->status() == WON) {
         std::cout << "I win!" << std::endl;
     }
     else if (game->status() == LOST) {

@@ -44,7 +44,7 @@ const Pixel DARK_UND{ 162, 209, 73 };
 const Pixel LIGHT_EMPTY{ 224, 195, 163 };
 const Pixel DARK_EMPTY{ 211, 185, 157 };
 const Pixel BORDER{ 126, 164, 53 };
-const Pixel FLAG{ 242, 54, 7 };
+//const Pixel FLAG{ 242, 54, 7 };
 const Pixel RESULTS{ 77, 193, 249 };
 const Pixel NUM_ONE{ 25, 118, 210 };
 const Pixel NUM_TWO{ 55, 141, 59 };
@@ -54,12 +54,12 @@ const Pixel NUM_FIVE{ 255, 139, 0 };
 const Pixel NUM_SIX{ 30, 157, 169 };
 
 // Pixel classification
-const std::array<std::pair<Pixel, int>, 12> pixel_classification = { {
+const std::array<std::pair<Pixel, int>, 11> pixel_classification = { {
         {LIGHT_UND, UNDISCOVERED},
         {DARK_UND, UNDISCOVERED},
         {LIGHT_EMPTY, 0},
         {DARK_EMPTY, 0},
-        {FLAG, MINE},
+        //{FLAG, MINE},
         {NUM_ONE, 1},
         {NUM_TWO, 2},
         {NUM_THREE, 3},

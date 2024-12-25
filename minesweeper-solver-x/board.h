@@ -22,10 +22,10 @@ class Board {
         void set_tile(int x, int y, int val);
         std::vector<Tile> get_all_tiles();
         std::vector<Tile> get_undiscovered_tiles();
-        std::vector<Tile> get_remaining_tiles();
-        std::vector<Tile> get_surrounding_tiles(int x, int y);
+        std::vector<Tile> get_surrounding_tiles(Tile t);
         std::vector<Tile> get_border_tiles();
-        std::vector<Tile> get_undiscovered_borders();
+		int remaining_nearby_mines(Tile t);
+        int discovered_count();
         void print();
 
     private:
