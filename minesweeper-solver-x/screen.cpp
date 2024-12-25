@@ -96,8 +96,8 @@ Screen::PixelIterator& Screen::PixelIterator::next() {
     return *this;
 }
 
-bool Screen::PixelIterator::operator!=(const PixelIterator& other) const {
-    return pos.x != other.pos.x || pos.y != other.pos.y;
+bool Screen::PixelIterator::is_end() {
+    return pos.x >= screen->get_dimension().width || pos.y >= screen->get_dimension().height;
 }
 
 // Skip to specific position
@@ -116,10 +116,6 @@ Screen::PixelIterator Screen::begin() const {
     return PixelIterator(this, Position(0, 0));
 }
 
-Screen::PixelIterator Screen::end() const { 
-    return PixelIterator(this, Position(0, dim.height));
-
-}
 Screen::PixelIterator Screen::iterate_from(Position start_pos) const {
     return PixelIterator(this, start_pos);
 }

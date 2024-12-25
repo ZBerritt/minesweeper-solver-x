@@ -26,7 +26,7 @@ Status Game::status() {
     }
 
     // Check for game over condition
-    for (Screen::PixelIterator it = screen.begin(); it != screen.end(); it.next()) {
+    for (Screen::PixelIterator it = screen.begin(); !it.is_end(); it.next()) {
         if (color_in_range(it.pixel(), RESULTS)) {
             return LOST;
         }
@@ -117,7 +117,7 @@ static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
 
     // Find width
     
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next()) {
         Position pos = it.position();
         if (color_in_range(it.pixel(), DARK_UND, 5)) {
             width = pos.x - top_left.x;
@@ -126,7 +126,7 @@ static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
     }
 
     // Find y
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next_row()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next_row()) {
         Position pos = it.position();
         if (color_in_range(it.pixel(), DARK_UND, 5)) {
             height = pos.y - top_left.y;
@@ -143,7 +143,7 @@ static Dimension find_board_dimensions(Screen& screen, const Position& top_left)
     uint32_t height = 0;
 
     // Find width
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next()) {
         Position pos = it.position();
         Pixel pixel = it.pixel();
         if (!color_in_range(pixel, LIGHT_UND, 5) && !color_in_range(pixel, DARK_UND, 5)) {
@@ -153,7 +153,7 @@ static Dimension find_board_dimensions(Screen& screen, const Position& top_left)
     }
 
     // Find y
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next_row()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next_row()) {
         Position pos = it.position();
         Pixel pixel = it.pixel();
         if (!color_in_range(pixel, LIGHT_UND, 5) && !color_in_range(pixel, DARK_UND, 5)) {
@@ -170,7 +170,7 @@ std::unique_ptr<Game> Game::find_game() {
     Screen screen;
     screen.take_screenshot();
 
-    for (Screen::PixelIterator it = screen.begin(); it != screen.end(); it.next()) {
+    for (Screen::PixelIterator it = screen.begin(); !it.is_end(); it.next()) {
         if (color_in_range(it.pixel(), LIGHT_UND)) {
             Position position = it.position();
             Dimension box_dimensions = find_box_dimensions(screen, position);

@@ -45,11 +45,11 @@ public:
 
         Pixel pixel() const;
         Position position() const;
-        bool operator!=(const PixelIterator& other) const;
 
         PixelIterator& next();
         PixelIterator& jump_to(Position new_pos);
         PixelIterator& next_row();
+        bool is_end();
     };
     Screen();
     Screen(Position p, Dimension d);
@@ -60,7 +60,6 @@ public:
 
     // Iteration
     PixelIterator begin() const;
-    PixelIterator end() const;
     PixelIterator iterate_from(Position start_pos) const;
 
 private:

@@ -15,9 +15,8 @@ int main() {
 
     // Start
 	std::cout << "Found game! Beginning solver..." << std::endl;
-    Solver solver = Solver(game->get_board());
+    Solver solver(game->get_board());
     while (game->status() == IN_PROGRESS) {
-        game->get_board()->print();
         std::vector<Move> moves = solver.get_moves();
 		if (moves.empty()) {
 			break;
@@ -34,6 +33,8 @@ int main() {
         std::this_thread::sleep_for(std::chrono::milliseconds(850));
         game->update();
     }
+
+    // Ending message
 	if (game->status() == IN_PROGRESS) {
 		std::cout << "I'm stuck..." << std::endl;
 	} else if (game->status() == WON) {
