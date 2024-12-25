@@ -1,13 +1,12 @@
-// screen.h
 #pragma once
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #define STRICT
 #include <windows.h>
-#include <vector>
+#include <memory>
 #include <stdexcept>
 #include <cstdint>
-
+#include <iterator>
 
 class ScreenshotException : public std::runtime_error {
 public:
@@ -15,7 +14,7 @@ public:
 };
 
 struct Position {
-    uint32_t x;
+    uint32_t x;  // Changed to signed for proper coordinate handling
     uint32_t y;
     Position(uint32_t x = 0, uint32_t y = 0) : x(x), y(y) {}
 };
@@ -36,17 +35,39 @@ struct Pixel {
 
 class Screen {
 public:
+
+    // Iterator struct for looping through image efficiently
+    struct PixelIterator {
+        const Screen* screen;
+        Position pos;
+
+        PixelIterator(const Screen* s, Position p);
+
+        Pixel pixel() const;
+        Position position() const;
+        bool operator!=(const PixelIterator& other) const;
+
+        PixelIterator& next();
+        PixelIterator& jump_to(Position new_pos);
+        PixelIterator& next_row();
+    };
     Screen();
     Screen(Position p, Dimension d);
     void take_screenshot();
-    Position get_position() const { return pos;  };
-    Dimension get_dimension() const { return dim; };
-    const Pixel& get_pixel(uint32_t x, uint32_t y) const;
+    Position get_position() const { return pos; }
+    Dimension get_dimension() const { return dim; }
+    Pixel get_pixel(uint32_t x, uint32_t y) const;
+
+    // Iteration
+    PixelIterator begin() const;
+    PixelIterator end() const;
+    PixelIterator iterate_from(Position start_pos) const;
 
 private:
     Position pos;
     Dimension dim;
-    std::vector<Pixel> pixels;
+    int stride;  // Added for proper pixel addressing
+    std::unique_ptr<uint8_t[]> bitmap_data;  // Raw bitmap data instead of vector of Pixels
 
     // RAII wrapper for GDI resources
     struct GdiResources {
@@ -68,11 +89,13 @@ private:
     };
 };
 
+// Screen movement and actions
+
+enum MouseAction {
+	LEFT_CLICK,
+	RIGHT_CLICK
+};
 
 // Screen utils
-
 void move_mouse(Position pos);
-
-void left_click();
-
-void right_click();
+void mouse_click(MouseAction action);

@@ -27,7 +27,8 @@ set(HEADERS
     solver.h
 )
 
-# Add the executable
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+# Resources (e.g. manifest)
+set(MANIFEST app.manifest)
 
-# TODO: Add tests and install targets if needed.
+# Add the executable
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${MANIFEST})

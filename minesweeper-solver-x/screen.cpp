@@ -1,30 +1,15 @@
-// screen.c
 #include "screen.h"
-#include <shellscalingapi.h>
 
 Screen::Screen() {
-    // Get the primary monitor handle
-    HMONITOR hMonitor = MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY);
-
-    MONITORINFOEX monitorInfo{};
-    monitorInfo.cbSize = sizeof(MONITORINFOEX);
-    GetMonitorInfo(hMonitor, &monitorInfo);
-
-    // Get actual monitor resolution without DPI scaling
-    DEVMODE dm{};
-    dm.dmSize = sizeof(dm);
-    dm.dmDriverExtra = 0;
-    EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &dm);
-
-    // Initialize with actual physical pixels
     pos = Position(0, 0);
     dim = Dimension(
-        static_cast<uint32_t>(dm.dmPelsWidth),
-        static_cast<uint32_t>(dm.dmPelsHeight)
+        static_cast<uint32_t>(GetSystemMetrics(SM_CXSCREEN)),
+        static_cast<uint32_t>(GetSystemMetrics(SM_CYSCREEN))
     );
+    stride = 0;  // Will be calculated in take_screenshot
 }
 
-Screen::Screen(Position p, Dimension d) : pos(p), dim(d) {}
+Screen::Screen(Position p, Dimension d) : pos(p), dim(d), stride(0) {}
 
 void Screen::take_screenshot() {
     if (dim.width == 0 || dim.height == 0) {
@@ -33,7 +18,6 @@ void Screen::take_screenshot() {
 
     GdiResources resources;
 
-    // Initialize GDI resources
     resources.screenDC = GetDC(nullptr);
     if (!resources.screenDC) {
         throw ScreenshotException("Failed to get screen DC");
@@ -61,77 +45,99 @@ void Screen::take_screenshot() {
     BITMAPINFOHEADER bi = {};
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = dim.width;
-    bi.biHeight = -static_cast<int32_t>(dim.height); // Negative for top-down bitmap
+    bi.biHeight = -static_cast<int32_t>(dim.height);  // Negative for top-down bitmap
     bi.biPlanes = 1;
-    bi.biBitCount = 24;
+    bi.biBitCount = 24;  // 24-bit RGB
     bi.biCompression = BI_RGB;
 
-    // Calculate stride and allocate bitmap data
-    int stride = ((dim.width * 3 + 3) & ~3);
-    std::vector<uint8_t> bitmapData(stride * dim.height);
+    // Calculate stride (bytes per row, padded to 4-byte boundary)
+    stride = ((dim.width * 3 + 3) & ~3);
+
+    // Allocate bitmap data
+    bitmap_data = std::make_unique<uint8_t[]>(stride * dim.height);
 
     // Get bitmap data
     if (!GetDIBits(resources.memoryDC, resources.bitmap, 0, dim.height,
-        bitmapData.data(), reinterpret_cast<BITMAPINFO*>(&bi),
-        DIB_RGB_COLORS)) {
+        bitmap_data.get(), reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS)) {
         throw ScreenshotException("Failed to get bitmap data");
     }
-
-    // Process bitmap data
-    pixels.clear();
-    pixels.reserve(dim.width * dim.height);
-
-    for (uint32_t y = 0; y < dim.height; ++y) {
-        for (uint32_t x = 0; x < dim.width; ++x) {
-            size_t offset = y * stride + x * 3;
-            pixels.emplace_back(
-                bitmapData[offset + 2],  // R
-                bitmapData[offset + 1],  // G
-                bitmapData[offset]       // B
-            );
-        }
-    }
 }
 
-const Pixel& Screen::get_pixel(uint32_t x, uint32_t y) const {
-    if (x >= dim.width || y >= dim.height || pixels.empty()) {
-        return Pixel(); // Return black pixel for invalid coordinates
+Pixel Screen::get_pixel(uint32_t x, uint32_t y) const {
+    if (x >= dim.width || y >= dim.height || !bitmap_data) {
+        return Pixel();  // Return black pixel for invalid coordinates
     }
-    return pixels[(y * dim.width) + x];
+
+    // Calculate offset into bitmap data
+    size_t offset = y * stride + x * 3;
+    return Pixel(
+        bitmap_data[offset + 2],  // R
+        bitmap_data[offset + 1],  // G
+        bitmap_data[offset]       // B
+    );
 }
 
-// Move the mouse to a specific position on the screen
+// Screen pixel iterator
+Screen::PixelIterator::PixelIterator(const Screen* s, Position p) : screen(s), pos(p) {}
+
+Pixel Screen::PixelIterator::pixel() const { 
+    return screen->get_pixel(pos.x, pos.y);
+}
+
+Position Screen::PixelIterator::position() const { 
+    return pos;
+}
+
+Screen::PixelIterator& Screen::PixelIterator::next() {
+    if (++pos.x >= screen->get_dimension().width) {
+        pos.x = 0;
+        ++pos.y;
+    }
+    return *this;
+}
+
+bool Screen::PixelIterator::operator!=(const PixelIterator& other) const {
+    return pos.x != other.pos.x || pos.y != other.pos.y;
+}
+
+// Skip to specific position
+Screen::PixelIterator& Screen::PixelIterator::jump_to(Position new_pos) {
+    pos = new_pos;
+    return *this;
+}
+
+// Shift over 1 row
+Screen::PixelIterator& Screen::PixelIterator::next_row() {
+    ++pos.y;
+    return *this;
+}
+
+Screen::PixelIterator Screen::begin() const { 
+    return PixelIterator(this, Position(0, 0));
+}
+
+Screen::PixelIterator Screen::end() const { 
+    return PixelIterator(this, Position(0, dim.height));
+
+}
+Screen::PixelIterator Screen::iterate_from(Position start_pos) const {
+    return PixelIterator(this, start_pos);
+}
+
 void move_mouse(Position pos) {
     SetCursorPos(pos.x, pos.y);
 }
 
-void left_click() {
+void mouse_click(MouseAction action) {
     // Press the left mouse button
     INPUT inputDown = {};
     inputDown.type = INPUT_MOUSE;
-    inputDown.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+    inputDown.mi.dwFlags = action == LEFT_CLICK ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_RIGHTDOWN;
 
     // Release the left mouse button
     INPUT inputUp = {};
     inputUp.type = INPUT_MOUSE;
-    inputUp.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-
-    // Send both events (press and release)
-    INPUT inputs[] = { inputDown, inputUp };
-    SendInput(2, inputs, sizeof(INPUT));
-}
-
-// Simulate a right mouse click
-void right_click() {
-    // Press the right mouse button
-    INPUT inputDown = {};
-    inputDown.type = INPUT_MOUSE;
-    inputDown.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-
-    // Release the right mouse button
-    INPUT inputUp = {};
-    inputUp.type = INPUT_MOUSE;
-    inputUp.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
+    inputUp.mi.dwFlags = action == LEFT_CLICK ? MOUSEEVENTF_LEFTUP : MOUSEEVENTF_RIGHTUP;
 
     // Send both events (press and release)
     INPUT inputs[] = { inputDown, inputUp };

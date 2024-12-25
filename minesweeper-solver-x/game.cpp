@@ -12,42 +12,6 @@ static bool color_in_range(const Pixel& a, const Pixel& b, int range = 10) {
         abs(a.blue - b.blue) <= range;
 }
 
-static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
-    for (uint32_t y = top_left.y + 1; y < screen.get_dimension().height; y++) {
-        Pixel pixel = screen.get_pixel(top_left.x, y);
-        if (color_in_range(pixel, DARK_UND)) {
-            for (uint32_t x = top_left.x + 1; x < screen.get_dimension().width; x++) {
-                pixel = screen.get_pixel(x, y - 1);
-                if (color_in_range(pixel, DARK_UND)) {
-                    return Dimension(
-                        static_cast<uint32_t>(x - top_left.x + 2),
-                        static_cast<uint32_t>(y - top_left.y + 2)
-                    );
-                }
-            }
-        }
-    }
-    return Dimension(0, 0);
-}
-
-static Dimension find_board_dimensions(Screen& screen, const Position& top_left) {
-    for (uint32_t y = top_left.y + 1; y < screen.get_dimension().height; y++) {
-        Pixel pixel = screen.get_pixel(top_left.x, y);
-        if (!color_in_range(pixel, LIGHT_UND) && !color_in_range(pixel, DARK_UND)) {
-            for (uint32_t x = top_left.x + 1; x < screen.get_dimension().width; x++) {
-                pixel = screen.get_pixel(x, y - 1);
-                if (!color_in_range(pixel, LIGHT_UND) && !color_in_range(pixel, DARK_UND)) {
-                    return Dimension(
-                        static_cast<uint32_t>(x - top_left.x),
-                        static_cast<uint32_t>(y - top_left.y)
-                    );
-                }
-            }
-        }
-    }
-    return Dimension(0, 0);
-}
-
 Game::Game(const Position& pos, const Dimension& board_dim, const Dimension& box_dim)
     : position(pos)
     , board_dimensions(board_dim)
@@ -60,21 +24,17 @@ Game::Game(const Position& pos, const Dimension& board_dim, const Dimension& box
 
 // Assumes the board's screenshot has already been taken
 Status Game::status() {
-    // Use pointer arithmetic for faster iteration
-    const Pixel* first_pixel = &screen.get_pixel(0, 0);
-    const size_t total_pixels = board_dimensions.width * board_dimensions.height;
-
-    // Check for game over condition
-    for (size_t i = 0; i < total_pixels; ++i) {
-        if (color_in_range(first_pixel[i], RESULTS)) {
-            return LOST;
-        }
-    }
-
     // Check win condition
     std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
     if (undiscovered.empty()) {
         return WON;
+    }
+
+    // Check for game over condition
+    for (Screen::PixelIterator it = screen.begin(); it != screen.end(); it.next()) {
+        if (color_in_range(it.pixel(), RESULTS)) {
+            return LOST;
+        }
     }
     return IN_PROGRESS;
 }
@@ -82,13 +42,13 @@ Status Game::status() {
 void Game::click(int x, int y) {
     const Position pos = box_mouse_position(x, y);
     move_mouse(pos);
-    left_click();
+    mouse_click(LEFT_CLICK);
 }
 
 void Game::flag(int x, int y) {
     const Position pos = box_mouse_position(x, y);
     move_mouse(pos);
-    right_click();
+    mouse_click(RIGHT_CLICK);
 }
 
 void Game::update() {
@@ -154,28 +114,78 @@ int Game::classify_pixel(const Pixel& pixel) {
     return UNKNOWN;
 }
 
-std::unique_ptr<Game> Game::find_game() {
-    Screen screen = Screen();
-    screen.take_screenshot();
+// Finding the game board
 
-    const uint32_t width = screen.get_dimension().width;
-    const uint32_t height = screen.get_dimension().height;
+static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
+    uint32_t width = 0;
+    uint32_t height = 0;
 
-    for (uint32_t y = 0; y < height; ++y) {
-        for (uint32_t x = 0; x < width; ++x) {
-            if (color_in_range(screen.get_pixel(x, y), LIGHT_UND)) {
-                const Position position(x, y);
-
-                const Dimension box_dimensions = find_box_dimensions(screen, position);
-                const Dimension board_dimensions = find_board_dimensions(screen, position);
-
-                if (box_dimensions.width > 0 && box_dimensions.height > 0 &&
-                    board_dimensions.width > 0 && board_dimensions.height > 0) {
-                    return std::make_unique<Game>(position, board_dimensions, box_dimensions);
-                }
-            }
+    // Find width
+    
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next()) {
+        Position pos = it.position();
+        if (color_in_range(it.pixel(), DARK_UND, 5)) {
+            width = pos.x - top_left.x;
+            break;
         }
     }
 
+    // Find y
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next_row()) {
+        Position pos = it.position();
+        if (color_in_range(it.pixel(), DARK_UND, 5)) {
+            height = pos.y - top_left.y;
+            break;
+        }
+    }
+    
+    // Return dimensions
+    return Dimension(width, height);
+}
+
+static Dimension find_board_dimensions(Screen& screen, const Position& top_left) {
+    uint32_t width = 0;
+    uint32_t height = 0;
+
+    // Find width
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next()) {
+        Position pos = it.position();
+        Pixel pixel = it.pixel();
+        if (!color_in_range(pixel, LIGHT_UND, 5) && !color_in_range(pixel, DARK_UND, 5)) {
+            width = pos.x - top_left.x;
+            break;
+        }
+    }
+
+    // Find y
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it != screen.end(); it.next_row()) {
+        Position pos = it.position();
+        Pixel pixel = it.pixel();
+        if (!color_in_range(pixel, LIGHT_UND, 5) && !color_in_range(pixel, DARK_UND, 5)) {
+            height = pos.y - top_left.y;
+            break;
+        }
+    }
+
+    // Return dimensions
+    return Dimension(width, height);
+}
+
+std::unique_ptr<Game> Game::find_game() {
+    Screen screen;
+    screen.take_screenshot();
+
+    for (Screen::PixelIterator it = screen.begin(); it != screen.end(); it.next()) {
+        if (color_in_range(it.pixel(), LIGHT_UND)) {
+            Position position = it.position();
+            Dimension box_dimensions = find_box_dimensions(screen, position);
+            Dimension board_dimensions = find_board_dimensions(screen, position);
+
+            if (box_dimensions.width > 0 && box_dimensions.height > 0 &&
+                board_dimensions.width > 0 && board_dimensions.height > 0) {
+                return std::make_unique<Game>(position, board_dimensions, box_dimensions);
+            }
+        }
+    }
     return nullptr;
 }
