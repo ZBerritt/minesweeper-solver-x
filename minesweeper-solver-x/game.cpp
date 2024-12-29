@@ -67,8 +67,8 @@ int Game::tile_value(int x, int y) const {
         return pixel_value;
     }
     std::pair<Position, Dimension> range = tile_range(x, y);
-    for (uint32_t i = range.first.x; i < range.first.x + range.second.width; i++) {
-        for (uint32_t j = range.first.y; j < range.first.y + range.second.height; j++) {
+    for (unsigned int i = range.first.x; i < range.first.x + range.second.width; i++) {
+        for (unsigned int j = range.first.y; j < range.first.y + range.second.height; j++) {
             pixel_value = classify_pixel(screen.get_pixel(i, j));
             if (pixel_value != UNKNOWN && pixel_value != 0) {
                 return pixel_value;
@@ -89,10 +89,10 @@ Position Game::box_mouse_position(int x, int y) const {
 
 // Relative to the screen object
 std::pair<Position, Dimension> Game::tile_range(int x, int y) const {
-    const uint32_t left_x = box_dimensions.width * x;
-    const uint32_t top_y = box_dimensions.height * y;
-    const uint32_t right_x = left_x + box_dimensions.width - 1;
-    const uint32_t bottom_y = top_y + box_dimensions.height - 1;
+    const unsigned int left_x = box_dimensions.width * x;
+    const unsigned int top_y = box_dimensions.height * y;
+    const unsigned int right_x = left_x + box_dimensions.width - 1;
+    const unsigned int bottom_y = top_y + box_dimensions.height - 1;
 
     return std::make_pair(Position(left_x, top_y), Dimension(right_x - left_x + 1, bottom_y - top_y + 1));
 }
@@ -112,8 +112,8 @@ int Game::classify_pixel(const Pixel& pixel) {
 // Finding the game board
 
 static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
-    uint32_t width = 0;
-    uint32_t height = 0;
+    unsigned int width = 0;
+    unsigned int height = 0;
 
     // Find width
     
@@ -139,8 +139,8 @@ static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
 }
 
 static Dimension find_board_dimensions(Screen& screen, const Position& top_left) {
-    uint32_t width = 0;
-    uint32_t height = 0;
+    unsigned int width = 0;
+    unsigned int height = 0;
 
     // Find width
     for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next()) {

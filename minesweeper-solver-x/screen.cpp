@@ -1,43 +1,69 @@
 #include "screen.h"
 
-Screen::Screen() {
-    pos = Position(0, 0);
-    dim = Dimension(
-        static_cast<uint32_t>(GetSystemMetrics(SM_CXSCREEN)),
-        static_cast<uint32_t>(GetSystemMetrics(SM_CYSCREEN))
-    );
-    stride = 0;  // Will be calculated in take_screenshot
+// Resource caching
+
+bool Screen::init_resources() {
+    if (screen_dc) return true; // Already initialized
+
+    screen_dc = GetDC(nullptr);
+    if (!screen_dc) return false;
+
+    memory_dc = CreateCompatibleDC(screen_dc);
+    if (!memory_dc) {
+        ReleaseDC(nullptr, screen_dc);
+        screen_dc = nullptr;
+        return false;
+    }
+
+    if (!bitmap) {
+		stride = ((dim.width * 3 + 3) & ~3);  // Calculate stride (bytes per row, padded to 4-byte boundary)
+        bitmap = CreateCompatibleBitmap(screen_dc, dim.width, dim.height);
+        
+        size_t required_size = stride * dim.height;
+        bitmap_data = std::make_unique<unsigned char[]>(required_size);
+    }
+
+    return true;
 }
 
-Screen::Screen(Position p, Dimension d) : pos(p), dim(d), stride(0) {}
+void Screen::clean_resources() {
+    if (bitmap) {
+        DeleteObject(bitmap);
+        bitmap = nullptr;
+    }
+    if (memory_dc) {
+        DeleteDC(memory_dc);
+        memory_dc = nullptr;
+    }
+    if (screen_dc) {
+        ReleaseDC(nullptr, screen_dc);
+        screen_dc = nullptr;
+    }
+}
+
+Screen::Screen(Position p, Dimension d) : pos(p), dim(d), stride(0),
+    screen_dc(nullptr), memory_dc(nullptr), bitmap(nullptr) {
+	init_resources();
+}
+
+Screen::~Screen() {
+	clean_resources();
+}
 
 void Screen::take_screenshot() {
     if (dim.width == 0 || dim.height == 0) {
         throw ScreenshotException("Invalid dimensions: width and height must be greater than 0");
     }
 
-    GdiResources resources;
-
-    resources.screenDC = GetDC(nullptr);
-    if (!resources.screenDC) {
-        throw ScreenshotException("Failed to get screen DC");
+    if (!screen_dc || !memory_dc || !bitmap) {
+        throw ScreenshotException("Resources were not properly initialized");
     }
 
-    resources.memoryDC = CreateCompatibleDC(resources.screenDC);
-    if (!resources.memoryDC) {
-        throw ScreenshotException("Failed to create memory DC");
-    }
-
-    resources.bitmap = CreateCompatibleBitmap(resources.screenDC, dim.width, dim.height);
-    if (!resources.bitmap) {
-        throw ScreenshotException("Failed to create compatible bitmap");
-    }
-
-    resources.oldBitmap = static_cast<HBITMAP>(SelectObject(resources.memoryDC, resources.bitmap));
+    HBITMAP oldBitmap = static_cast<HBITMAP>(SelectObject(memory_dc, bitmap));
 
     // Copy screen to bitmap
-    if (!BitBlt(resources.memoryDC, 0, 0, dim.width, dim.height,
-        resources.screenDC, pos.x, pos.y, SRCCOPY)) {
+    if (!BitBlt(memory_dc, 0, 0, dim.width, dim.height,
+        screen_dc, pos.x, pos.y, SRCCOPY)) {
         throw ScreenshotException("Failed to copy screen content");
     }
 
@@ -50,20 +76,15 @@ void Screen::take_screenshot() {
     bi.biBitCount = 24;  // 24-bit RGB
     bi.biCompression = BI_RGB;
 
-    // Calculate stride (bytes per row, padded to 4-byte boundary)
-    stride = ((dim.width * 3 + 3) & ~3);
-
-    // Allocate bitmap data
-    bitmap_data = std::make_unique<uint8_t[]>(stride * dim.height);
-
     // Get bitmap data
-    if (!GetDIBits(resources.memoryDC, resources.bitmap, 0, dim.height,
+    if (!GetDIBits(memory_dc, bitmap, 0, dim.height,
         bitmap_data.get(), reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS)) {
+        SelectObject(memory_dc, oldBitmap);
         throw ScreenshotException("Failed to get bitmap data");
     }
 }
 
-Pixel Screen::get_pixel(uint32_t x, uint32_t y) const {
+Pixel Screen::get_pixel(unsigned int x, unsigned int y) const {
     if (x >= dim.width || y >= dim.height || !bitmap_data) {
         return Pixel();  // Return black pixel for invalid coordinates
     }
