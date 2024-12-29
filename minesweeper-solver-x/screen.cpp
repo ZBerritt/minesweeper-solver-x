@@ -18,9 +18,8 @@ bool Screen::init_resources() {
     if (!bitmap) {
 		stride = ((dim.width * 3 + 3) & ~3);  // Calculate stride (bytes per row, padded to 4-byte boundary)
         bitmap = CreateCompatibleBitmap(screen_dc, dim.width, dim.height);
-        
-        size_t required_size = stride * dim.height;
-        bitmap_data = std::make_unique<unsigned char[]>(required_size);
+
+        bitmap_data = std::make_unique<unsigned char[]>(stride * dim.height);
     }
 
     return true;

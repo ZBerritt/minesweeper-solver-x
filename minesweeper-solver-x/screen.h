@@ -12,7 +12,7 @@ public:
 };
 
 struct Position {
-    unsigned int x;  // Changed to signed for proper coordinate handling
+    unsigned int x;
     unsigned int y;
     Position(unsigned int x = 0, unsigned int y = 0) : x(x), y(y) {}
 };
@@ -33,7 +33,7 @@ struct Pixel {
 
 class Screen {
 public:
-    // Iterator struct for looping through image efficiently
+    // Iterator
     struct PixelIterator {
         const Screen* screen;
         Position pos;
@@ -68,7 +68,7 @@ public:
 private:
     Position pos;
     Dimension dim;
-    int stride;  // Added for proper pixel addressing
+    unsigned int stride;  // Added for proper pixel addressing
     std::unique_ptr<unsigned char[]> bitmap_data;  // Raw bitmap data instead of vector of Pixels
        
     bool init_resources();

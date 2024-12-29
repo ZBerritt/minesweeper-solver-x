@@ -8,15 +8,12 @@ int main() {
     // Search
     std::cout << "Searching for game..." << std::endl;
     std::unique_ptr<Game> game = Game::find_game();
-    while (game == nullptr) {
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-        game = Game::find_game();
-    }
 
     // Start
 	std::cout << "Found game! Beginning solver..." << std::endl;
     Solver solver(game->get_board());
     while (game->status() == IN_PROGRESS) {
+        game->get_board()->print();
         std::vector<Move> moves = solver.get_moves();
 		if (moves.empty()) {
 			break;
