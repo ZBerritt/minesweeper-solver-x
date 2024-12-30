@@ -2,12 +2,37 @@
 #include <chrono>
 #include <thread>
 #include "game.h"
+#include <iostream>
 
-static bool color_in_range(const Pixel& a, const Pixel& b, int range = 10) {
+// Generates our 81 sample points for tile detection
+std::vector<Pixel> Game::generate_sample_points(int x, int y) const {
+    const auto [range_pos, range_dim] = tile_range(x, y);
+
+    std::vector<Pixel> samples;
+    samples.reserve(81);
+    for (float rx = 0.1f; rx < 1.0f; rx += 0.1f) {
+        for (float ry = 0.1f; ry < 1.0f; ry += 0.1f) {
+            uint32_t px = range_pos.x + static_cast<uint32_t>(rx * range_dim.width);
+            uint32_t py = range_pos.y + static_cast<uint32_t>(ry * range_dim.height);
+            samples.push_back(screen.get_pixel(px, py));
+        }
+    }
+
+    return samples;
+}
+
+static inline bool color_in_range(const Pixel& a, const Pixel& b, int range = 10) {
     return abs(a.red - b.red) <= range &&
         abs(a.green - b.green) <= range &&
         abs(a.blue - b.blue) <= range;
 }
+
+static double get_color_distance(const Pixel& a, const Pixel& b) {
+    int dr = static_cast<int>(a.red) - b.red;
+    int dg = static_cast<int>(a.green) - b.green;
+    int db = static_cast<int>(a.blue) - b.blue;
+    return std::sqrt(dr * dr + dg * dg + db * db);
+};
 
 Game::Game(const Position& pos, const Dimension& board_dim, const Dimension& box_dim)
     : position(pos)
@@ -59,25 +84,70 @@ void Game::update() {
     }
 }
 
+
+// TODO: Detection on small tiles (i.e. hard difficulty) is not completely working
 int Game::tile_value(int x, int y) const {
-    const Position mid = box_mouse_position(x, y);
-    const int mid_x = mid.x - position.x;
-    const int mid_y = mid.y - position.y;
-    const Pixel& pixel = screen.get_pixel(mid_x, mid_y);
-    int pixel_value = classify_pixel(pixel);
-    if (pixel_value > 0) { // Ignore false positives, numbered tile has empty colors
-        return pixel_value;
-    }
-    std::pair<Position, Dimension> range = tile_range(x, y);
-    for (uint32_t i = range.first.x; i < range.first.x + range.second.width; i++) {
-        for (uint32_t j = range.first.y; j < range.first.y + range.second.height; j++) {
-            pixel_value = classify_pixel(screen.get_pixel(i, j));
-            if (pixel_value > 0) {
-                return pixel_value;
-            }
+	// Populate sample points
+    std::vector<Pixel> samples = generate_sample_points(x, y);
+
+    // Base Case - Is the tile undiscovered?
+    int undiscovered_matches = 0;
+    for (const auto& pixel : samples) {
+		if (classify_pixel(pixel) == UNDISCOVERED && ++undiscovered_matches >= 42) { // We require over half of the samples to be undiscovered
+			return UNDISCOVERED;
         }
     }
-    return pixel_value;
+
+	// Advamced Color Matching
+	std::vector<int> value_votes(TILE_VALUE_COUNT, 0);
+
+    for (const auto& pixel : samples) {
+        // Enhanced color distance calculation
+        float min_distance = 999999.0f;
+        int best_match = 0;
+
+        for (const auto& [color, value] : pixel_classification) {
+            if (value <= 0) continue;
+            float distance = get_color_distance(pixel, color);
+            if (distance < min_distance) {
+                min_distance = distance;
+                best_match = value;
+            }
+        }
+
+        if (min_distance < 30.0f) {  // Adjusted threshold
+            value_votes[best_match]++;
+        }
+    }
+
+    // Find the value with the most votes
+    int max_votes = 0;
+    int detected_value = 0;
+    for (int i = 0; i < value_votes.size(); i++) {
+        if (value_votes[i] > max_votes) {
+            max_votes = value_votes[i];
+            detected_value = i;
+        }
+    }
+
+    // Return detected value if exists
+    if (max_votes > 0) {
+        return detected_value;
+    }
+
+    // Final Case - The tile may be empty
+    int empty_matches = 0;
+    for (const auto& pixel : samples) {
+        if (classify_pixel(pixel) == 0 && ++empty_matches >= 42) {
+            return 0;
+        }
+    }
+#ifndef NDEBUG
+	std::cerr << "Failed to detect tile value: (" << std::to_string(x) << ", " << std::to_string(y) << ")" << std::endl;
+    exit(-1);
+#else
+	return UNKNOWN;
+#endif
 }
 
 // Relative to the computer screen
@@ -179,7 +249,7 @@ std::unique_ptr<Game> Game::find_game() {
                 Dimension box_dimensions = find_box_dimensions(screen, position);
                 Dimension board_dimensions = find_board_dimensions(screen, position);
 
-                if (box_dimensions.width > 0 && box_dimensions.height > 0 &&
+                if (box_dimensions.width > 10 && box_dimensions.height > 10 &&
                     board_dimensions.width > 0 && board_dimensions.height > 0) {
                     return std::make_unique<Game>(position, board_dimensions, box_dimensions);
                 }

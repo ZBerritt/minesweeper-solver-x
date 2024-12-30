@@ -35,8 +35,10 @@ private:
     std::pair<Position, Dimension> tile_range(int x, int y) const;
 
     static int classify_pixel(const Pixel& pixel);
+    std::vector<Pixel> generate_sample_points(int x, int y) const;
 };
 
+const int TILE_VALUE_COUNT = 7; // # of tile values (0-6)
 
 // Board Colors
 const Pixel LIGHT_UND{ 170, 215, 81 };
