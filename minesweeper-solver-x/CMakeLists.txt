@@ -1,16 +1,13 @@
-﻿# CMake project for minesweeper-solver-x, include source and define project-specific logic here.
-
-# Specify the minimum CMake version
+﻿# Project
 cmake_minimum_required(VERSION 3.12)
-
-# Set the project name
 project(msx)
 
 # Define the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Collect source files
+# Sources
 set(SOURCES
     board.cpp
     game.cpp
@@ -19,7 +16,7 @@ set(SOURCES
     solver.cpp
 )
 
-# Collect header files (optional but good for IDE organization)
+# Headers
 set(HEADERS
     board.h
     game.h
@@ -27,7 +24,7 @@ set(HEADERS
     solver.h
 )
 
-# Resources (e.g. manifest)
+# Manifest
 set(MANIFEST app.manifest)
 
 # Add the executable
