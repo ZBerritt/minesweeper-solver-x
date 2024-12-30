@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <memory>
 #include <stdexcept>
+#include <cstdint>
 
 class ScreenshotException : public std::runtime_error {
 public:
@@ -12,23 +13,23 @@ public:
 };
 
 struct Position {
-    unsigned int x;
-    unsigned int y;
-    Position(unsigned int x = 0, unsigned int y = 0) : x(x), y(y) {}
+    uint32_t x;
+    uint32_t y;
+    Position(uint32_t x = 0, uint32_t y = 0) : x(x), y(y) {}
 };
 
 struct Dimension {
-    unsigned int width;
-    unsigned int height;
-    Dimension(unsigned int w = 0, unsigned int h = 0) : width(w), height(h) {}
+    uint32_t width;
+    uint32_t height;
+    Dimension(uint32_t w = 0, uint32_t h = 0) : width(w), height(h) {}
 };
 
 struct Pixel {
-    unsigned char red;
-    unsigned char green;
-    unsigned char blue;
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
     Pixel() : red(0), green(0), blue(0) {}
-    Pixel(unsigned char r, unsigned char g, unsigned char b) : red(r), green(g), blue(b) {}
+    Pixel(uint8_t r, uint8_t g, uint8_t b) : red(r), green(g), blue(b) {}
 };
 
 class Screen {
@@ -40,25 +41,25 @@ public:
 
         PixelIterator(const Screen* s, Position p);
 
-        Pixel pixel() const;
-        Position position() const;
+        Pixel pixel() const noexcept;
+        Position position() const noexcept;
 
-        PixelIterator& next();
-        PixelIterator& jump_to(Position new_pos);
-        PixelIterator& next_row();
-        bool is_end();
+        PixelIterator& next() noexcept;
+        PixelIterator& jump_to(Position new_pos) noexcept;
+        PixelIterator& next_row() noexcept;
+        bool is_end() noexcept;
     };
     Screen(Position p = {0, 0}, 
-        Dimension d = { static_cast<unsigned int>(GetSystemMetrics(SM_CXSCREEN)), static_cast<unsigned int>(GetSystemMetrics(SM_CYSCREEN)) });
+        Dimension d = { static_cast<uint32_t>(GetSystemMetrics(SM_CXVIRTUALSCREEN)), static_cast<uint32_t>(GetSystemMetrics(SM_CYVIRTUALSCREEN)) });
     ~Screen();
     void take_screenshot();
     Position get_position() const { return pos; }
     Dimension get_dimension() const { return dim; }
-    Pixel get_pixel(unsigned int x, unsigned int y) const;
+    Pixel get_pixel(uint32_t x, uint32_t y) const noexcept;
 
     // Iteration
-    PixelIterator begin() const;
-    PixelIterator iterate_from(Position start_pos) const;
+    PixelIterator begin() const noexcept;
+    PixelIterator iterate_from(Position start_pos) const noexcept;
 
     // Screenshot resources and methods
     HDC screen_dc;
@@ -68,8 +69,8 @@ public:
 private:
     Position pos;
     Dimension dim;
-    unsigned int stride;  // Added for proper pixel addressing
-    std::unique_ptr<unsigned char[]> bitmap_data;  // Raw bitmap data instead of vector of Pixels
+    uint32_t stride;  // Added for proper pixel addressing
+    std::unique_ptr<uint8_t[]> bitmap_data;  // Raw bitmap data instead of vector of Pixels
        
     bool init_resources();
     void clean_resources();

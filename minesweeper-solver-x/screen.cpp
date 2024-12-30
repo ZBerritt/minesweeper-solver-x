@@ -19,7 +19,7 @@ bool Screen::init_resources() {
 		stride = ((dim.width * 3 + 3) & ~3);  // Calculate stride (bytes per row, padded to 4-byte boundary)
         bitmap = CreateCompatibleBitmap(screen_dc, dim.width, dim.height);
 
-        bitmap_data = std::make_unique<unsigned char[]>(stride * dim.height);
+        bitmap_data = std::make_unique<uint8_t[]>(stride * dim.height);
     }
 
     return true;
@@ -83,12 +83,7 @@ void Screen::take_screenshot() {
     }
 }
 
-Pixel Screen::get_pixel(unsigned int x, unsigned int y) const {
-    if (x >= dim.width || y >= dim.height || !bitmap_data) {
-        return Pixel();  // Return black pixel for invalid coordinates
-    }
-
-    // Calculate offset into bitmap data
+Pixel Screen::get_pixel(uint32_t x, uint32_t y) const noexcept {
     size_t offset = y * stride + x * 3;
     return Pixel(
         bitmap_data[offset + 2],  // R
@@ -100,15 +95,15 @@ Pixel Screen::get_pixel(unsigned int x, unsigned int y) const {
 // Screen pixel iterator
 Screen::PixelIterator::PixelIterator(const Screen* s, Position p) : screen(s), pos(p) {}
 
-Pixel Screen::PixelIterator::pixel() const { 
+Pixel Screen::PixelIterator::pixel() const noexcept { 
     return screen->get_pixel(pos.x, pos.y);
 }
 
-Position Screen::PixelIterator::position() const { 
+Position Screen::PixelIterator::position() const noexcept { 
     return pos;
 }
 
-Screen::PixelIterator& Screen::PixelIterator::next() {
+Screen::PixelIterator& Screen::PixelIterator::next() noexcept {
     if (++pos.x >= screen->get_dimension().width) {
         pos.x = 0;
         ++pos.y;
@@ -116,27 +111,27 @@ Screen::PixelIterator& Screen::PixelIterator::next() {
     return *this;
 }
 
-bool Screen::PixelIterator::is_end() {
+bool Screen::PixelIterator::is_end() noexcept {
     return pos.x >= screen->get_dimension().width || pos.y >= screen->get_dimension().height;
 }
 
 // Skip to specific position
-Screen::PixelIterator& Screen::PixelIterator::jump_to(Position new_pos) {
+Screen::PixelIterator& Screen::PixelIterator::jump_to(Position new_pos) noexcept {
     pos = new_pos;
     return *this;
 }
 
 // Shift over 1 row
-Screen::PixelIterator& Screen::PixelIterator::next_row() {
+Screen::PixelIterator& Screen::PixelIterator::next_row() noexcept {
     ++pos.y;
     return *this;
 }
 
-Screen::PixelIterator Screen::begin() const { 
+Screen::PixelIterator Screen::begin() const noexcept { 
     return PixelIterator(this, Position(0, 0));
 }
 
-Screen::PixelIterator Screen::iterate_from(Position start_pos) const {
+Screen::PixelIterator Screen::iterate_from(Position start_pos) const noexcept {
     return PixelIterator(this, start_pos);
 }
 
