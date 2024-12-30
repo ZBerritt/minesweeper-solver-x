@@ -1,3 +1,5 @@
+#include <numeric>
+
 #include "solver.h"
 
 Solver::Solver(std::shared_ptr<Board> b) : board(b) {}
@@ -52,5 +54,50 @@ std::vector<Move> Solver::basic_move() {
 
 
 std::vector<Move> Solver::guess_move() {
-	return random_move();
+	Tile* best_tile = nullptr;
+	double best_prob = -1;
+	std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
+	for (Tile t : undiscovered) {
+		std::vector<Tile> surrounding = board->get_surrounding_tiles(t);
+		std::vector<double> probs;
+		for (Tile s : surrounding) {
+			int surrounding_mines = board->remaining_nearby_mines(s);
+			if (surrounding_mines > 0) {
+				probs.push_back(1.0 / surrounding_mines);
+			}
+		}
+		double avg_prob = 0;
+		if (!probs.empty()) {
+			avg_prob = std::accumulate(probs.begin(), probs.end(), 0.0) / probs.size();
+		}
+		if (avg_prob > best_prob) {
+			best_tile = &t;
+			best_prob = avg_prob;
+		}
+	}
+
+	if (best_tile) {
+		return { { CLICK_ACTION, best_tile->x, best_tile->y } };
+	}
+	else {
+		return random_move();
+	}
 }
+
+
+/*def prob_algorithm(board: Board) -> set:
+    best_tile = None
+    best_prob = -1
+    tiles = board.get_undiscovered_borders()
+    for tile in tiles:
+        probs = []
+        for sur_tile in board.get_surrounding_tiles(tile):
+            surrounding_mines = board.remaining_nearby_mines(sur_tile)
+            if surrounding_mines > 0:
+                probs.append(1 / surrounding_mines)
+        avg_prob = np.average(probs)
+        if avg_prob > best_prob:    
+            best_tile = tile
+            best_prob = avg_prob
+
+    return set([(best_tile.x, best_tile.y, Action.CLICK)]) if best_tile else get_random_move(board)*/
