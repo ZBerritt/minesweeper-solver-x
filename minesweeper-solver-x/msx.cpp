@@ -13,7 +13,8 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         else if (std::string(argv[i]) == "-h") {
-            std::cout << "Usage: msx [-hb]" << std::endl;
+            std::cout << "Minesweeper Solver X [Version 1.0.0]" << std::endl
+                << "Usage: msx [-hb]" << std::endl;
             return 0;
         }
     }
