@@ -22,7 +22,7 @@ class Board {
         void set_tile(int x, int y, int val);
         int get_height() const { return height; }
 		int get_width() const { return width; }
-        std::vector<Tile> get_all_tiles();
+        const std::vector<Tile>& get_all_tiles() const { return tiles; }
         std::vector<Tile> get_undiscovered_tiles();
         std::vector<Tile> get_surrounding_tiles(Tile t);
         std::vector<Tile> get_border_tiles();

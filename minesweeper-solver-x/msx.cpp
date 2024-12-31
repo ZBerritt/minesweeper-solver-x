@@ -5,7 +5,7 @@
 #include "solver.h"
 #include "game.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
     // Options
     for (int i = 0; i < argc; i++) {
         if (argv[i] == "-b") {

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 
 #include "board.h"
 
@@ -21,10 +22,6 @@ const Tile& Board::get_tile(int x, int y) const {
 
 void Board::set_tile(int x, int y, int val) {
     tiles[to_index(x, y)].value = val;
-}
-
-std::vector<Tile> Board::get_all_tiles() {
-    return tiles;
 }
 
 std::vector<Tile> Board::get_undiscovered_tiles() {
@@ -85,13 +82,8 @@ int Board::remaining_nearby_mines(Tile t) {
 }
 
 int Board::discovered_count() {
-	int count = 0;
-    for (Tile tile : tiles) {
-        if (tile.value != UNDISCOVERED) {
-            count++;
-        }
-    }
-    return count;
+    return std::count_if(tiles.begin(), tiles.end(),
+        [](const Tile& tile) { return tile.value != UNDISCOVERED; });
 }
 
 void Board::print() {
