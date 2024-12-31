@@ -5,46 +5,39 @@
 Board::Board(int w, int h) {
     height = h;
     width = w;
-    boxes = std::vector<std::vector<Tile>>(height, std::vector<Tile>(width));
+    tiles.resize(height * width);
 
+    // Add coordinates
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
-            boxes[i][j] = Tile(j, i);
+            tiles[to_index(j, i)] = Tile(j, i);
         }
     }
 }
 
 const Tile& Board::get_tile(int x, int y) const {
-    return boxes[y][x];
+    return tiles[to_index(x, y)];
 }
 
 void Board::set_tile(int x, int y, int val) {
-    boxes[y][x].value = val;
+    tiles[to_index(x, y)].value = val;
 }
 
 std::vector<Tile> Board::get_all_tiles() {
-   std::vector<Tile> all_tiles;
-   all_tiles.reserve(height * width);
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            all_tiles.push_back(boxes[i][j]);
-        }
-    }
-    return all_tiles;
+    return tiles;
 }
 
 std::vector<Tile> Board::get_undiscovered_tiles() {
    std::vector<Tile> undiscovered;
    undiscovered.reserve(height * width);
-   for (const auto& row : boxes) {
-       for (const auto& tile : row) {
-           if (tile.value == UNDISCOVERED) {
-               undiscovered.push_back(tile);
-           }
-       }
+
+   for (const auto& tile : tiles) {
+        if (tile.value == UNDISCOVERED) {
+            undiscovered.push_back(tile);
+        }
    }
    undiscovered.shrink_to_fit();
-    return undiscovered;
+   return undiscovered;
 }
 
 std::vector<Tile> Board::get_surrounding_tiles(Tile t) {
@@ -58,7 +51,7 @@ std::vector<Tile> Board::get_surrounding_tiles(Tile t) {
 
     for (int i = start_i; i <= end_i; i++) {
         for (int j = start_j; j <= end_j; j++) {
-            surrounding.push_back(boxes[i][j]);
+            surrounding.push_back(tiles[to_index(j, i)]);
         }
     }
     return surrounding;
@@ -66,16 +59,13 @@ std::vector<Tile> Board::get_surrounding_tiles(Tile t) {
 
 std::vector<Tile> Board::get_border_tiles() {
     std::vector<Tile> border;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            const Tile& t = boxes[i][j];
-            if (t.value != UNDISCOVERED) {
-                std::vector<Tile> surrounding = get_surrounding_tiles(t);
-                for (Tile s : surrounding) {
-                    if (s.value == UNDISCOVERED) {
-                        border.push_back(t);
-                        break;
-                    }
+    for (Tile tile : tiles) {
+        if (tile.value != UNDISCOVERED) {
+            std::vector<Tile> surrounding = get_surrounding_tiles(tile);
+            for (Tile s : surrounding) {
+                if (s.value == UNDISCOVERED) {
+                    border.push_back(tile);
+                    break;
                 }
             }
         }
@@ -96,20 +86,18 @@ int Board::remaining_nearby_mines(Tile t) {
 
 int Board::discovered_count() {
 	int count = 0;
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			if (boxes[i][j].value != UNDISCOVERED) {
-				count++;
-			}
-		}
-	}
-	return count;
+    for (Tile tile : tiles) {
+        if (tile.value != UNDISCOVERED) {
+            count++;
+        }
+    }
+    return count;
 }
 
 void Board::print() {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            Tile tile = boxes[i][j];
+            Tile tile = tiles[to_index(j, i)];
             if (tile.value == UNDISCOVERED) {
                 std::cout << "-";
             }
@@ -119,7 +107,7 @@ void Board::print() {
             else if (tile.value == UNKNOWN) {
                 std::cout << "?";
             } else {
-                std::cout << boxes[i][j].value;
+                std::cout << tile.value;
             }
             std::cout << " ";
         }

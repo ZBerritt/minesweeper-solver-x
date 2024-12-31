@@ -33,5 +33,7 @@ class Board {
     private:
         int height;
         int width;
-        std::vector<std::vector<Tile>> boxes;
+        std::vector<Tile> tiles;
+
+        inline int to_index(int x, int y) const { return y * width + x;  }
 };
