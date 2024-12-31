@@ -60,10 +60,13 @@ std::set<Move> Solver::basic_move() {
 std::set<Move> Solver::guess_move() {
 	Tile* best_tile = nullptr;
 	double best_prob = -1;
+
 	std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
+	std::vector<double> probs;
+	probs.reserve(8);
 	for (Tile t : undiscovered) {
+		probs.clear();
 		std::vector<Tile> surrounding = board->get_surrounding_tiles(t);
-		std::vector<double> probs;
 		for (Tile s : surrounding) {
 			int surrounding_mines = board->remaining_nearby_mines(s);
 			if (surrounding_mines > 0) {

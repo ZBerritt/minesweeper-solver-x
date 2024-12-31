@@ -18,7 +18,7 @@ struct Tile {
 class Board {
     public:
         Board(int w, int h);
-        Tile get_tile(int x, int y);
+        const Tile& get_tile(int x, int y) const;
         void set_tile(int x, int y, int val);
         int get_height() const { return height; }
 		int get_width() const { return width; }

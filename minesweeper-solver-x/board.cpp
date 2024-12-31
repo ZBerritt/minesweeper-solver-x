@@ -14,7 +14,7 @@ Board::Board(int w, int h) {
     }
 }
 
-Tile Board::get_tile(int x, int y) {
+const Tile& Board::get_tile(int x, int y) const {
     return boxes[y][x];
 }
 
@@ -24,6 +24,7 @@ void Board::set_tile(int x, int y, int val) {
 
 std::vector<Tile> Board::get_all_tiles() {
    std::vector<Tile> all_tiles;
+   all_tiles.reserve(height * width);
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             all_tiles.push_back(boxes[i][j]);
@@ -34,23 +35,30 @@ std::vector<Tile> Board::get_all_tiles() {
 
 std::vector<Tile> Board::get_undiscovered_tiles() {
    std::vector<Tile> undiscovered;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            if (boxes[i][j].value == UNDISCOVERED) {
-                undiscovered.push_back(boxes[i][j]);
-            }
-        }
-    }
+   undiscovered.reserve(height * width);
+   for (const auto& row : boxes) {
+       for (const auto& tile : row) {
+           if (tile.value == UNDISCOVERED) {
+               undiscovered.push_back(tile);
+           }
+       }
+   }
+   undiscovered.shrink_to_fit();
     return undiscovered;
 }
 
 std::vector<Tile> Board::get_surrounding_tiles(Tile t) {
     std::vector<Tile> surrounding;
-    for (int i = t.y - 1; i <= t.y + 1; i++) {
-        for (int j = t.x - 1; j <= t.x + 1; j++) {
-            if (i >= 0 && i < height && j >= 0 && j < width) {
-                surrounding.push_back(boxes[i][j]);
-            }
+    surrounding.reserve(8);
+
+    const int start_i = std::max(0, t.y - 1);
+    const int end_i = std::min(height - 1, t.y + 1);
+    const int start_j = std::max(0, t.x - 1);
+    const int end_j = std::min(width - 1, t.x + 1);
+
+    for (int i = start_i; i <= end_i; i++) {
+        for (int j = start_j; j <= end_j; j++) {
+            surrounding.push_back(boxes[i][j]);
         }
     }
     return surrounding;
@@ -60,7 +68,7 @@ std::vector<Tile> Board::get_border_tiles() {
     std::vector<Tile> border;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            Tile t = boxes[i][j];
+            const Tile& t = boxes[i][j];
             if (t.value != UNDISCOVERED) {
                 std::vector<Tile> surrounding = get_surrounding_tiles(t);
                 for (Tile s : surrounding) {
