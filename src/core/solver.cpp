@@ -1,4 +1,3 @@
-#include <numeric>
 #include <vector>
 
 #include "solver.h"
@@ -58,37 +57,89 @@ std::set<Move> Solver::basic_move() {
 
 
 std::set<Move> Solver::guess_move() {
-    Tile best_tile;
-    bool found_best = false;
-    double best_prob = -1;
+    const std::vector<Tile>& undiscovered = board->get_undiscovered_tiles();
+    if (undiscovered.empty()) {
+        return std::set<Move>();
+    }
 
-    std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
-    std::vector<double> probs;
-    probs.reserve(8);
-    for (Tile t : undiscovered) {
-        probs.clear();
-        std::vector<Tile> surrounding = board->get_surrounding_tiles(t);
-        for (Tile s : surrounding) {
-            int surrounding_mines = board->remaining_nearby_mines(s);
-            if (surrounding_mines > 0) {
-                probs.push_back(1.0 / surrounding_mines);
+    Tile best_tile = undiscovered[0];
+    double best_score = -1;
+
+    // Pre-allocate vectors to avoid repeated allocations
+    std::vector<Tile> surrounding;
+    std::vector<Tile> neighbor_tiles;
+    surrounding.reserve(8);
+    neighbor_tiles.reserve(8);
+
+    // Cache board dimensions to avoid repeated function calls
+    const int board_width = board->get_width();
+    const int board_height = board->get_height();
+
+    for (const Tile& t : undiscovered) {
+        double tile_score = 0.0;
+        int valid_neighbors = 0;
+
+        // Clear vectors instead of reallocating
+        surrounding.clear();
+
+        // Manually inline get_surrounding_tiles logic for better performance
+        const int start_i = std::max(0, t.y - 1);
+        const int end_i = std::min(board_height - 1, t.y + 1);
+        const int start_j = std::max(0, t.x - 1);
+        const int end_j = std::min(board_width - 1, t.x + 1);
+
+        for (int i = start_i; i <= end_i; i++) {
+            for (int j = start_j; j <= end_j; j++) {
+                surrounding.push_back(board->get_tile(j, i));
             }
         }
-        double score = 0.0;
-        if (!probs.empty()) {
-            score = std::accumulate(probs.begin(), probs.end(), 0.0) / surrounding.size();
+
+        for (const Tile& s : surrounding) {
+            // Only consider numbered tiles
+            if (s.value > 0) {
+                neighbor_tiles.clear();
+
+                // Manually inline get_surrounding_tiles again
+                const int n_start_i = std::max(0, s.y - 1);
+                const int n_end_i = std::min(board_height - 1, s.y + 1);
+                const int n_start_j = std::max(0, s.x - 1);
+                const int n_end_j = std::min(board_width - 1, s.x + 1);
+
+                int undiscovered_count = 0;
+                int remaining_mines = s.value;
+
+                // Count undiscovered tiles and remaining mines in one pass
+                for (int i = n_start_i; i <= n_end_i; i++) {
+                    for (int j = n_start_j; j <= n_end_j; j++) {
+                        const Tile& neighbor = board->get_tile(j, i);
+                        if (neighbor.value == UNDISCOVERED) {
+                            undiscovered_count++;
+                        }
+                        else if (neighbor.value == MINE) {
+                            remaining_mines--;
+                        }
+                    }
+                }
+
+                if (undiscovered_count > 0) {
+                    // Calculate safety score: lower ratio of mines to undiscovered = safer
+                    tile_score += 1.0 - (static_cast<double>(remaining_mines) / undiscovered_count);
+                    valid_neighbors++;
+                }
+            }
         }
-        if (score > best_prob) {
-            found_best = true;
-            best_tile = t;
-            best_prob = score;
+
+        // Only consider tiles with valid numbered neighbors
+        if (valid_neighbors > 0) {
+            // Calculate final score with neighbor bonus
+            const double final_score = (tile_score / valid_neighbors) * (1.0 + (valid_neighbors / 8.0));
+
+            if (final_score > best_score) {
+                best_tile = t;
+                best_score = final_score;
+            }
         }
     }
 
-    if (found_best) {
-        return { { CLICK_ACTION, best_tile.x, best_tile.y } };
-    }
-    else {
-        return random_move();
-    }
+    return { { CLICK_ACTION, best_tile.x, best_tile.y } };
 }
