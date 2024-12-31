@@ -45,11 +45,6 @@ target_include_directories(benchmarks PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Set up dependencies
-target_link_libraries(core PUBLIC utils)
-target_link_libraries(games PUBLIC core utils)
-target_link_libraries(benchmarks PUBLIC games core utils)
-
 # Create the main executable
 add_executable(msx 
     app/app.manifest

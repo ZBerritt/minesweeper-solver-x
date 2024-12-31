@@ -75,6 +75,7 @@ int Board::remaining_nearby_mines(Tile t) {
     std::vector<Tile> surrounding = get_surrounding_tiles(t);
     for (Tile s : surrounding) {
         if (s.value == MINE) {
+
             remaining_mines--;
         }
     }

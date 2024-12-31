@@ -7,7 +7,7 @@ Solver::Solver(std::shared_ptr<Board> b) : board(b) {}
 std::set<Move> Solver::get_moves(bool guess) {
     int discovered = board->discovered_count();
     if (discovered == 0) {
-        return guess ? random_move() : std::set<Move>{};
+        return guess ? first_move() : std::set<Move>{};
     }
     else if (discovered == board->get_width() * board->get_height()) {
         return std::set<Move>{};
@@ -20,12 +20,10 @@ std::set<Move> Solver::get_moves(bool guess) {
     return moves;
 }
 
-std::set<Move> Solver::random_move() {
-    std::set<Move> moves;
+std::set<Move> Solver::first_move() {
     std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
-    int random = (rand() % undiscovered.size());
-    moves.insert({ CLICK_ACTION, undiscovered[random].x, undiscovered[random].y });
-    return moves;
+    int mid_index = (board->get_height() / 2 * board->get_width()) + (board->get_width() / 2);
+    return { { CLICK_ACTION, undiscovered[mid_index].x, undiscovered[mid_index].y } };
 }
 
 

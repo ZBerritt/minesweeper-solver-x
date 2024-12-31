@@ -60,7 +60,6 @@ void Benchmark::run() {
 			}
 			vboard.update();
 			//vboard.get_board()->print();
-			//std::cout << std::endl;
 		}
 		// Store run time
 		auto end = std::chrono::high_resolution_clock::now();

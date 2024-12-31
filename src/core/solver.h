@@ -30,7 +30,7 @@ public:
 
 private:
     std::shared_ptr<Board> board;
-    std::set<Move> random_move();
+    std::set<Move> first_move();
     std::set<Move> basic_move();
     std::set<Move> guess_move();
 };

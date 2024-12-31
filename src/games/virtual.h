@@ -24,3 +24,4 @@ private:
 	void create_board(int start_x, int start_y);
 	int tile_value(int x, int y);
 };
+
