@@ -8,11 +8,11 @@
 int main(int argc, char* argv[]) {
     // Options
     for (int i = 0; i < argc; i++) {
-        if (argv[i] == "-b") {
+        if (std::string(argv[i]) == "-b") {
             Benchmark::full_benchmark();
             return 0;
         }
-        else if (argv[i] == "-h") {
+        else if (std::string(argv[i]) == "-h") {
             std::cout << "Usage: msx [-hb]" << std::endl;
             return 0;
         }
