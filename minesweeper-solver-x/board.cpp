@@ -99,7 +99,6 @@ int Board::discovered_count() {
 }
 
 void Board::print() {
-    std::cout << std::endl;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             Tile tile = boxes[i][j];

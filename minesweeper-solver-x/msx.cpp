@@ -6,12 +6,18 @@
 #include "game.h"
 
 int main(int argc, char** argv) {
+    // Options
     for (int i = 0; i < argc; i++) {
-        if (true || argv[i] == "-b") {
+        if (argv[i] == "-b") {
             Benchmark::full_benchmark();
             return 0;
         }
+        else if (argv[i] == "-h") {
+            std::cout << "Usage: msx [-hb]" << std::endl;
+            return 0;
+        }
     }
+
     // Search
     std::cout << "Searching for game..." << std::endl;
     std::unique_ptr<Game> game = Game::find_game();
@@ -20,8 +26,8 @@ int main(int argc, char** argv) {
 	std::cout << "Found game! Beginning solver..." << std::endl;
     Solver solver(game->get_board());
     while (game->status() == IN_PROGRESS) {
-        game->get_board()->print();
-        std::vector<Move> moves = solver.get_moves();
+        //game->get_board()->print();
+        std::set<Move> moves = solver.get_moves();
 		if (moves.empty()) {
 			break;
 		}

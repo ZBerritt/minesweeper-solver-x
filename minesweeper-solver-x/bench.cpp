@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cmath>
 #include "solver.h"
 
 #include "bench.h"
@@ -10,20 +9,24 @@ static const std::chrono::seconds TIMEOUT = std::chrono::seconds(5);
 Benchmark::Benchmark(int w, int h, int m) : width(w), height(h), mines(m), successes(0), failures(0), timeouts(0) {}
 
 void Benchmark::full_benchmark() {
-	std::cout << "Solver algortihm benchmark:" << std::endl;
-	std::cout << "Easy board..." << std::endl;
+	std::cout << "Minesweeper Solver X Algortihm Benchmark:" << std::endl;
+	
+	std::cout << "Easy board (10x10 m=10)" << std::endl;
 	Benchmark bench(10, 10, 10);
 	bench.run();
 	bench.print_results();
-	std::cout << "Medium board..." << std::endl;
+	
+	std::cout << "Medium board (15x15 m=40)" << std::endl;
 	Benchmark bench2(15, 15, 40);
 	bench2.run();
 	bench2.print_results();
-	std::cout << "Hard board..." << std::endl;
+	
+	std::cout << "Hard board (20x20 m=100)" << std::endl;
 	Benchmark bench3(20, 20, 100);
 	bench3.run();
 	bench3.print_results();
-	std::cout << "Impossible board..." << std::endl;
+
+	std::cout << "Impossible board (50x50 m=1000)" << std::endl;
 	Benchmark bench4(50, 50, 1000);
 	bench4.run();
 	bench4.print_results();
@@ -36,7 +39,7 @@ void Benchmark::run() {
 		Solver solver = Solver(vboard.get_board());
 		auto start = std::chrono::high_resolution_clock::now();
 		while (vboard.status() == V_IN_PROGRESS) {
-			std::vector<Move> moves = solver.get_moves();
+			std::set<Move> moves = solver.get_moves();
 			// Check timeout condition
 			auto current_time = std::chrono::high_resolution_clock::now();
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(current_time - start);
@@ -45,13 +48,17 @@ void Benchmark::run() {
 			}
 			for (Move move : moves) {
 				if (move.action == FLAG_ACTION) {
+					//std::cout << "Flag: (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
 					vboard.get_board()->set_tile(move.x, move.y, MINE);
 				}
 				else if (move.action == CLICK_ACTION) {
+					//std::cout << "Click: (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
 					vboard.click(move.x, move.y);
 				}
 			}
 			vboard.update();
+			//vboard.get_board()->print();
+			//std::cout << std::endl;
 		}
 		// Store run time
 		auto end = std::chrono::high_resolution_clock::now();
@@ -69,9 +76,6 @@ void Benchmark::run() {
 			successes++;
 		}
 		else if (vboard.status() == V_LOST) {
-			std::cout << "Discovered: " << std::to_string(vboard.get_board()->discovered_count()) << std::endl;
-			std::cout << "Total: " << std::to_string(vboard.get_board()->get_height() * vboard.get_board()->get_width()) << std::endl;
-			vboard.get_board()->print();
 			failures++;
 		}
 		else {

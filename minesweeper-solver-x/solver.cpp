@@ -1,11 +1,11 @@
 #include <numeric>
+#include <vector>
 
 #include "solver.h"
 
 Solver::Solver(std::shared_ptr<Board> b) : board(b) {}
 
-
-std::vector<Move> Solver::get_moves() {
+std::set<Move> Solver::get_moves() {
 	int discovered = board->discovered_count();
    if (discovered == 0) {
        return random_move();
@@ -14,24 +14,24 @@ std::vector<Move> Solver::get_moves() {
 	   return {};
    }
 
-   std::vector<Move> moves = basic_move();
+   std::set<Move> moves = basic_move();
    if (moves.empty()) {
 	   moves = guess_move();
    }
    return moves;
 }
 
-std::vector<Move> Solver::random_move() {
-    std::vector<Move> moves;
+std::set<Move> Solver::random_move() {
+    std::set<Move> moves;
 	std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
     int random = (rand() % undiscovered.size());
-	moves.push_back({ CLICK_ACTION, undiscovered[random].x, undiscovered[random].y });
+	moves.insert({ CLICK_ACTION, undiscovered[random].x, undiscovered[random].y });
     return moves;
 }
 
 
-std::vector<Move> Solver::basic_move() {
-	std::vector<Move> moves;
+std::set<Move> Solver::basic_move() {
+	std::set<Move> moves;
 	for (Tile t : board->get_border_tiles()) {
 		int remaining_mines = board->remaining_nearby_mines(t);
 		std::vector<Tile> surrounding = board->get_surrounding_tiles(t);
@@ -45,10 +45,10 @@ std::vector<Move> Solver::basic_move() {
 		for (Tile s : surrounding) {
 			if (s.value == UNDISCOVERED) {
 				if (mine_chance == 1) {
-					moves.push_back({ FLAG_ACTION, s.x, s.y });
+					moves.insert({ FLAG_ACTION, s.x, s.y });
 				}
 				if (mine_chance == 0) {
-					moves.push_back({ CLICK_ACTION, s.x, s.y });
+					moves.insert({ CLICK_ACTION, s.x, s.y });
 				}
 			}
 		}
@@ -57,7 +57,7 @@ std::vector<Move> Solver::basic_move() {
 }
 
 
-std::vector<Move> Solver::guess_move() {
+std::set<Move> Solver::guess_move() {
 	Tile* best_tile = nullptr;
 	double best_prob = -1;
 	std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
