@@ -26,7 +26,7 @@ struct Move {
 class Solver {
 public:
     Solver(std::shared_ptr<Board> b);
-    std::set<Move> get_moves(); 
+    std::set<Move> get_moves(bool guess); 
 
 private:
     std::shared_ptr<Board> board;

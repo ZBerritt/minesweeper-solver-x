@@ -67,24 +67,36 @@ int main(int argc, char* argv[]) {
     // Execute solver
     std::cout << "Starting Minesweeper Solver X for game type " << game_type << std::endl;
     Solver solver(game->get_board());
+    int empty_move_cycles = 0;
+    bool guessing = true;
     while (game->status() == IN_PROGRESS) {
         if (print_board) {
             game->get_board()->print();
         }
-        std::set<Move> moves = solver.get_moves();
+        std::set<Move> moves = solver.get_moves(guessing);
 		if (moves.empty()) {
-			break;
-		}
-        for (Move move : moves) {
-            if (verbose) {
-                std::cout << (move.action == CLICK_ACTION ? "Click" : "Flag") << ": (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
+            if (guessing) {
+                break;
             }
-            if (move.action == FLAG_ACTION) {
-				game->get_board()->set_tile(move.x, move.y, MINE); // Manually set as mine for algorithm
-				//game->flag(move.x, move.y); // Commented out to prevent flagging
+            empty_move_cycles++;
+            if (empty_move_cycles >= 4) {
+                guessing = true;
             }
-            else if (move.action == CLICK_ACTION) {
-                game->click(move.x, move.y);
+        }
+        else {
+            empty_move_cycles = 0;
+            guessing = false;
+            for (Move move : moves) {
+                if (verbose) {
+                    std::cout << (move.action == CLICK_ACTION ? "Click" : "Flag") << ": (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
+                }
+                if (move.action == FLAG_ACTION) {
+                    game->get_board()->set_tile(move.x, move.y, MINE); // Manually set as mine for algorithm
+                    //game->flag(move.x, move.y); // Commented out to prevent flagging
+                }
+                else if (move.action == CLICK_ACTION) {
+                    game->click(move.x, move.y);
+                }
             }
         }
         std::this_thread::sleep_for(game->get_move_delay());

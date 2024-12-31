@@ -36,7 +36,7 @@ static double get_color_distance(const Pixel& a, const Pixel& b) {
 };
 
 Google::Google(const Position& pos, const Dimension& board_dim, const Dimension& box_dim) : 
-    Game("Google", board_dim.width / box_dim.width, board_dim.height / box_dim.height, std::chrono::milliseconds(850))
+    Game("Google", board_dim.width / box_dim.width, board_dim.height / box_dim.height, std::chrono::milliseconds(250))
     , position(pos)
     , board_dimensions(board_dim)
     , box_dimensions(box_dim)
@@ -141,7 +141,7 @@ int Google::tile_value(int x, int y) const {
     // Final Case - The tile may be empty
     int empty_matches = 0;
     for (const auto& pixel : samples) {
-        if (classify_pixel(pixel) == 0 && ++empty_matches >= 42) {
+        if (classify_pixel(pixel) == 0 && ++empty_matches >= 64) { // We need more confidence to label something as 0
             return 0;
         }
     }

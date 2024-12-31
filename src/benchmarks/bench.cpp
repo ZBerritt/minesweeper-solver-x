@@ -41,7 +41,7 @@ void Benchmark::run() {
 		Solver solver = Solver(vboard.get_board());
 		auto start = std::chrono::high_resolution_clock::now();
 		while (vboard.status() == IN_PROGRESS) {
-			std::set<Move> moves = solver.get_moves();
+			std::set<Move> moves = solver.get_moves(true);
 			// Check timeout condition
 			auto current_time = std::chrono::high_resolution_clock::now();
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(current_time - start);
