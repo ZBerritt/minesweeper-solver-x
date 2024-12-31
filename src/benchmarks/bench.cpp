@@ -1,5 +1,7 @@
 #include <iostream>
-#include "solver.h"
+#include "core/solver.h"
+#include "core/board.h"
+#include "games/virtual.h"
 
 #include "bench.h"
 

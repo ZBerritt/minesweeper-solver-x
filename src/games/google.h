@@ -1,8 +1,8 @@
 #pragma once
 #include <memory>
 #include <array>
-#include "screen.h"
-#include "board.h"
+#include "utils/screen.h"
+#include "core/board.h"
 
 enum Status {
     IN_PROGRESS,
@@ -10,10 +10,10 @@ enum Status {
     WON
 };
 
-class Game {
+class Google {
 public:
-    static std::unique_ptr<Game> find_game();
-    Game(const Position& pos, const Dimension& board_dimensions, const Dimension& box_dimensions);
+    static std::unique_ptr<Google> find_game();
+    Google(const Position& pos, const Dimension& board_dimensions, const Dimension& box_dimensions);
     std::shared_ptr<Board> get_board() const { return board; }
     Status status();
     void update();

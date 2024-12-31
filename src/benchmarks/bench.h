@@ -1,6 +1,4 @@
 #include <chrono>
-#include "board.h"
-#include "virtual.h"
 
 class Benchmark {
 public:

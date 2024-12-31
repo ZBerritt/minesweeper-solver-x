@@ -1,11 +1,12 @@
 #include <cmath>
 #include <chrono>
 #include <thread>
-#include "game.h"
 #include <iostream>
 
+#include "google.h"
+
 // Generates our 81 sample points for tile detection
-std::vector<Pixel> Game::generate_sample_points(int x, int y) const {
+std::vector<Pixel> Google::generate_sample_points(int x, int y) const {
     const auto [range_pos, range_dim] = tile_range(x, y);
 
     std::vector<Pixel> samples;
@@ -34,7 +35,7 @@ static double get_color_distance(const Pixel& a, const Pixel& b) {
     return std::sqrt(dr * dr + dg * dg + db * db);
 };
 
-Game::Game(const Position& pos, const Dimension& board_dim, const Dimension& box_dim)
+Google::Google(const Position& pos, const Dimension& board_dim, const Dimension& box_dim)
     : position(pos)
     , board_dimensions(board_dim)
     , box_dimensions(box_dim)
@@ -45,7 +46,7 @@ Game::Game(const Position& pos, const Dimension& board_dim, const Dimension& box
 }
 
 // Assumes the board's screenshot has already been taken
-Status Game::status() {
+Status Google::status() {
     // Check win condition
     std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
     if (undiscovered.empty()) {
@@ -61,19 +62,19 @@ Status Game::status() {
     return IN_PROGRESS;
 }
 
-void Game::click(int x, int y) {
+void Google::click(int x, int y) {
     const Position pos = box_mouse_position(x, y);
     move_mouse(pos);
     mouse_click(LEFT_CLICK);
 }
 
-void Game::flag(int x, int y) {
+void Google::flag(int x, int y) {
     const Position pos = box_mouse_position(x, y);
     move_mouse(pos);
     mouse_click(RIGHT_CLICK);
 }
 
-void Game::update() {
+void Google::update() {
     move_mouse({ 0, 0 }); // Move mouse out of the way of the game board
     screen.take_screenshot();
 
@@ -86,7 +87,7 @@ void Game::update() {
 
 
 // TODO: Detection on small tiles (i.e. hard difficulty) is not completely working
-int Game::tile_value(int x, int y) const {
+int Google::tile_value(int x, int y) const {
 	// Populate sample points
     std::vector<Pixel> samples = generate_sample_points(x, y);
 
@@ -142,16 +143,11 @@ int Game::tile_value(int x, int y) const {
             return 0;
         }
     }
-#ifndef NDEBUG
-	std::cerr << "Failed to detect tile value: (" << std::to_string(x) << ", " << std::to_string(y) << ")" << std::endl;
-    exit(-1);
-#else
 	return UNKNOWN;
-#endif
 }
 
 // Relative to the computer screen
-Position Game::box_mouse_position(int x, int y) const {
+Position Google::box_mouse_position(int x, int y) const {
     return Position(
         position.x + (box_dimensions.width * x) + box_dimensions.width / 2,
         position.y + (box_dimensions.height * y) + box_dimensions.height / 2
@@ -160,7 +156,7 @@ Position Game::box_mouse_position(int x, int y) const {
 
 
 // Relative to the screen object
-std::pair<Position, Dimension> Game::tile_range(int x, int y) const {
+std::pair<Position, Dimension> Google::tile_range(int x, int y) const {
     const uint32_t left_x = box_dimensions.width * x;
     const uint32_t top_y = box_dimensions.height * y;
     const uint32_t right_x = left_x + box_dimensions.width - 1;
@@ -169,7 +165,7 @@ std::pair<Position, Dimension> Game::tile_range(int x, int y) const {
     return std::make_pair(Position(left_x, top_y), Dimension(right_x - left_x + 1, bottom_y - top_y + 1));
 }
 
-int Game::classify_pixel(const Pixel& pixel) {
+int Google::classify_pixel(const Pixel& pixel) {
     // Iterate through the mapping to find a matching color range
     for (const auto& [range, value] : pixel_classification) {
         if (color_in_range(pixel, range)) {
@@ -238,7 +234,7 @@ static Dimension find_board_dimensions(Screen& screen, const Position& top_left)
     return Dimension(width, height);
 }
 
-std::unique_ptr<Game> Game::find_game() {
+std::unique_ptr<Google> Google::find_game() {
     Screen screen;
    
     while (true) {
@@ -251,7 +247,7 @@ std::unique_ptr<Game> Game::find_game() {
 
                 if (box_dimensions.width > 10 && box_dimensions.height > 10 &&
                     board_dimensions.width > 0 && board_dimensions.height > 0) {
-                    return std::make_unique<Game>(position, board_dimensions, box_dimensions);
+                    return std::make_unique<Google>(position, board_dimensions, box_dimensions);
                 }
             }
         }

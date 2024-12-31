@@ -10,4 +10,4 @@ endif()
 project ("minesweeper-solver-x" VERSION 1.0.0)
 
 # Include sub-projects.
-add_subdirectory ("minesweeper-solver-x")
+add_subdirectory ("src")

@@ -1,9 +1,9 @@
 ﻿#include <iostream>
 #include <chrono>
 #include <thread>
-#include "bench.h"
-#include "solver.h"
-#include "game.h"
+#include "benchmarks/bench.h"
+#include "core/solver.h"
+#include "games/google.h"
 
 int main(int argc, char* argv[]) {
     // Options
@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 
     // Search
     std::cout << "Searching for game..." << std::endl;
-    std::unique_ptr<Game> game = Game::find_game();
+    std::unique_ptr<Google> game = Google::find_game();
 
     // Start
 	std::cout << "Found game! Beginning solver..." << std::endl;

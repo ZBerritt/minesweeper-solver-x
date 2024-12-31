@@ -1,7 +1,7 @@
 #include <memory>
 #include <vector>
 
-#include "board.h"
+#include "core/board.h"
 
 enum VirtualStatus {
 	V_IN_PROGRESS,
