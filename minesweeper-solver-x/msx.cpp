@@ -1,10 +1,17 @@
 ﻿#include <iostream>
 #include <chrono>
 #include <thread>
+#include "bench.h"
 #include "solver.h"
 #include "game.h"
 
-int main() {
+int main(int argc, char** argv) {
+    for (int i = 0; i < argc; i++) {
+        if (true || argv[i] == "-b") {
+            Benchmark::full_benchmark();
+            return 0;
+        }
+    }
     // Search
     std::cout << "Searching for game..." << std::endl;
     std::unique_ptr<Game> game = Game::find_game();

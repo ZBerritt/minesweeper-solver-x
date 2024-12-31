@@ -14,6 +14,8 @@ set(SOURCES
     msx.cpp
     screen.cpp
     solver.cpp
+    virtual.cpp
+    bench.cpp
 )
 
 # Headers
@@ -22,6 +24,8 @@ set(HEADERS
     game.h
     screen.h
     solver.h
+    virtual.h
+    bench.h
 )
 
 # Manifest

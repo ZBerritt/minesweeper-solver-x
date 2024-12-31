@@ -6,8 +6,12 @@ Solver::Solver(std::shared_ptr<Board> b) : board(b) {}
 
 
 std::vector<Move> Solver::get_moves() {
-   if (board->discovered_count() == 0) {
+	int discovered = board->discovered_count();
+   if (discovered == 0) {
        return random_move();
+   }
+   else if (discovered == board->get_width() * board->get_height()) {
+	   return {};
    }
 
    std::vector<Move> moves = basic_move();
@@ -83,21 +87,3 @@ std::vector<Move> Solver::guess_move() {
 		return random_move();
 	}
 }
-
-
-/*def prob_algorithm(board: Board) -> set:
-    best_tile = None
-    best_prob = -1
-    tiles = board.get_undiscovered_borders()
-    for tile in tiles:
-        probs = []
-        for sur_tile in board.get_surrounding_tiles(tile):
-            surrounding_mines = board.remaining_nearby_mines(sur_tile)
-            if surrounding_mines > 0:
-                probs.append(1 / surrounding_mines)
-        avg_prob = np.average(probs)
-        if avg_prob > best_prob:    
-            best_tile = tile
-            best_prob = avg_prob
-
-    return set([(best_tile.x, best_tile.y, Action.CLICK)]) if best_tile else get_random_move(board)*/
