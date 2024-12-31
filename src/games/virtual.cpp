@@ -3,7 +3,7 @@
 #include <cassert>
 #include "virtual.h"
 
-Virtual::Virtual(int w, int h, int m) : Game("Virtual", w, h, std::chrono::milliseconds(0)) {
+Virtual::Virtual(int w, int h, int m, std::chrono::milliseconds d) : Game("Virtual", w, h, d) {
     mines = m;
     board = std::make_shared<Board>(w, h);
 }
@@ -122,8 +122,4 @@ Status Virtual::status() {
     }
     
     return unclicked_non_mine ? IN_PROGRESS : WON;
-}
-
-std::shared_ptr<Board> Virtual::get_board() {
-    return board;
 }

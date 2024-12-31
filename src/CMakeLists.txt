@@ -16,6 +16,7 @@ add_library(utils STATIC
 add_library(core STATIC
     core/board.cpp
     core/solver.cpp
+    core/game.cpp
 )
 
 add_library(games STATIC

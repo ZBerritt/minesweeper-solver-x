@@ -78,10 +78,12 @@ void Google::update() {
     move_mouse({ 0, 0 }); // Move mouse out of the way of the game board
     screen.take_screenshot();
 
-    std::vector<Tile> tiles = board->get_undiscovered_tiles();
+    std::vector<Tile> tiles = board->get_all_tiles();
     for (const Tile& tile : tiles) {
+        if (tile.value < MINE) { // Don't update already detected values
         int value = tile_value(tile.x, tile.y);
         board->set_tile(tile.x, tile.y, value);
+        }
     }
 }
 
@@ -104,12 +106,12 @@ int Google::tile_value(int x, int y) const {
 
     for (const auto& pixel : samples) {
         // Enhanced color distance calculation
-        float min_distance = 999999.0f;
+        double min_distance = 999999.0;
         int best_match = 0;
 
         for (const auto& [color, value] : pixel_classification) {
             if (value <= 0) continue;
-            float distance = get_color_distance(pixel, color);
+            double distance = get_color_distance(pixel, color);
             if (distance < min_distance) {
                 min_distance = distance;
                 best_match = value;
@@ -235,6 +237,7 @@ static Dimension find_board_dimensions(Screen& screen, const Position& top_left)
 }
 
 std::unique_ptr<Google> Google::find_game() {
+    std::cout << "Searching for Google board, please make sure its on the screen" << std::endl;
     Screen screen;
    
     while (true) {
