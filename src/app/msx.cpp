@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     // Start
 	std::cout << "Found game! Beginning solver..." << std::endl;
     Solver solver(game->get_board());
-    while (game->status() == IN_PROGRESS) {
+    while (game->status() == G_IN_PROGRESS) {
         //game->get_board()->print();
         std::set<Move> moves = solver.get_moves();
 		if (moves.empty()) {
@@ -46,12 +46,12 @@ int main(int argc, char* argv[]) {
     }
 
     // Ending message
-	if (game->status() == IN_PROGRESS) {
+	if (game->status() == G_IN_PROGRESS) {
 		std::cout << "I'm stuck..." << std::endl;
-	} else if (game->status() == WON) {
+	} else if (game->status() == G_WON) {
         std::cout << "I win!" << std::endl;
     }
-    else if (game->status() == LOST) {
+    else if (game->status() == G_LOST) {
         std::cout << "Game over." << std::endl;
     }
 

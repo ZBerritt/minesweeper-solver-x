@@ -3,11 +3,12 @@
 #include <array>
 #include "utils/screen.h"
 #include "core/board.h"
+#include "core/game.h"
 
 enum Status {
-    IN_PROGRESS,
-    LOST,
-    WON
+    G_IN_PROGRESS,
+    G_LOST,
+    G_WON
 };
 
 class Google {

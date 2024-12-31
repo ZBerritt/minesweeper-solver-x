@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "core/board.h"
+#include "core/game.h"
 
 enum VirtualStatus {
 	V_IN_PROGRESS,

@@ -50,16 +50,16 @@ Status Google::status() {
     // Check win condition
     std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
     if (undiscovered.empty()) {
-        return WON;
+        return G_WON;
     }
 
     // Check for game over condition
     for (Screen::PixelIterator it = screen.begin(); !it.is_end(); it.next()) {
         if (color_in_range(it.pixel(), RESULTS)) {
-            return LOST;
+            return G_LOST;
         }
     }
-    return IN_PROGRESS;
+    return G_IN_PROGRESS;
 }
 
 void Google::click(int x, int y) {
