@@ -35,12 +35,12 @@ static double get_color_distance(const Pixel& a, const Pixel& b) {
     return std::sqrt(dr * dr + dg * dg + db * db);
 };
 
-Google::Google(const Position& pos, const Dimension& board_dim, const Dimension& box_dim)
-    : position(pos)
+Google::Google(const Position& pos, const Dimension& board_dim, const Dimension& box_dim) : 
+    Game("Google", board_dim.width / box_dim.width, board_dim.height / box_dim.height, std::chrono::milliseconds(850))
+    , position(pos)
     , board_dimensions(board_dim)
     , box_dimensions(box_dim)
     , screen(pos, board_dim)
-    , board(std::make_shared<Board>(board_dim.width / box_dim.width, board_dim.height / box_dim.height))
 {
     update();
 }
@@ -50,16 +50,16 @@ Status Google::status() {
     // Check win condition
     std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
     if (undiscovered.empty()) {
-        return G_WON;
+        return WON;
     }
 
     // Check for game over condition
     for (Screen::PixelIterator it = screen.begin(); !it.is_end(); it.next()) {
         if (color_in_range(it.pixel(), RESULTS)) {
-            return G_LOST;
+            return LOST;
         }
     }
-    return G_IN_PROGRESS;
+    return IN_PROGRESS;
 }
 
 void Google::click(int x, int y) {

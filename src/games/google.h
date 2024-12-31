@@ -1,25 +1,17 @@
 #pragma once
 #include <memory>
 #include <array>
-#include "utils/screen.h"
-#include "core/board.h"
 #include "core/game.h"
+#include "utils/screen.h"
 
-enum Status {
-    G_IN_PROGRESS,
-    G_LOST,
-    G_WON
-};
-
-class Google {
+class Google : public Game {
 public:
     static std::unique_ptr<Google> find_game();
     Google(const Position& pos, const Dimension& board_dimensions, const Dimension& box_dimensions);
-    std::shared_ptr<Board> get_board() const { return board; }
-    Status status();
-    void update();
-    void click(int x, int y);
-    void flag(int x, int y);
+    Status status() override;
+    void update() override;
+    void click(int x, int y) override;
+    void flag(int x, int y) override;
 
 private:
     // Cache frequently used values
@@ -27,8 +19,8 @@ private:
     const Dimension board_dimensions;
     const Dimension box_dimensions;
 
+    // Screen object used
     Screen screen;
-    std::shared_ptr<Board> board;
 
     // Helper methods
     Position box_mouse_position(int x, int y) const;

@@ -40,7 +40,7 @@ void Benchmark::run() {
 		Virtual vboard = Virtual(width, height, mines);
 		Solver solver = Solver(vboard.get_board());
 		auto start = std::chrono::high_resolution_clock::now();
-		while (vboard.status() == V_IN_PROGRESS) {
+		while (vboard.status() == IN_PROGRESS) {
 			std::set<Move> moves = solver.get_moves();
 			// Check timeout condition
 			auto current_time = std::chrono::high_resolution_clock::now();
@@ -74,10 +74,10 @@ void Benchmark::run() {
 		);
 
 		// Determine if success
-		if (vboard.status() == V_WON) {
+		if (vboard.status() == WON) {
 			successes++;
 		}
-		else if (vboard.status() == V_LOST) {
+		else if (vboard.status() == LOST) {
 			failures++;
 		}
 		else {

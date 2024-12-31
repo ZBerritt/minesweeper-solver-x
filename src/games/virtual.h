@@ -1,14 +1,8 @@
+#pragma once
 #include <memory>
 #include <vector>
 
-#include "core/board.h"
 #include "core/game.h"
-
-enum VirtualStatus {
-	V_IN_PROGRESS,
-	V_WON,
-	V_LOST
-};
 
 struct VirtualTile {
 	bool mine;
@@ -16,12 +10,13 @@ struct VirtualTile {
 	VirtualTile() : mine(false), clicked(false) {}
 };
 
-class Virtual {
+class Virtual : public Game {
 public:
 	Virtual(int w, int h, int m);
-	void click(int x, int y);
-	void update();
-	VirtualStatus status();
+	void click(int x, int y) override;
+	void flag(int x, int y) override;
+	void update() override;
+	Status status() override;
 	std::shared_ptr<Board> get_board();
 private:
 	int mines;

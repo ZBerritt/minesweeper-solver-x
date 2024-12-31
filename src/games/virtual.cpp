@@ -3,7 +3,7 @@
 #include <cassert>
 #include "virtual.h"
 
-Virtual::Virtual(int w, int h, int m) {
+Virtual::Virtual(int w, int h, int m) : Game("Virtual", w, h, std::chrono::milliseconds(0)) {
     mines = m;
     board = std::make_shared<Board>(w, h);
 }
@@ -91,6 +91,8 @@ void Virtual::click(int x, int y) {
     }
 }
 
+void Virtual::flag(int x, int y) {}
+
 void Virtual::update() {
     for (int i = 0; i < board->get_height(); i++) {
         for (int j = 0; j < board->get_width(); j++) {
@@ -102,16 +104,16 @@ void Virtual::update() {
     }
 }
 
-VirtualStatus Virtual::status() {
+Status Virtual::status() {
     if (tiles.empty()) {
-        return V_IN_PROGRESS;
+        return IN_PROGRESS;
     }
     bool unclicked_non_mine = false;
     for (int i = 0; i < board->get_height(); i++) {
         for (int j = 0; j < board->get_width(); j++) {
             VirtualTile vtile = tiles[i][j];
             if (vtile.clicked && vtile.mine) {
-                return V_LOST;
+                return LOST;
             }
             else if (!vtile.clicked && !vtile.mine) {
                 unclicked_non_mine = true;
@@ -119,7 +121,7 @@ VirtualStatus Virtual::status() {
         }
     }
     
-    return unclicked_non_mine ? V_IN_PROGRESS : V_WON;
+    return unclicked_non_mine ? IN_PROGRESS : WON;
 }
 
 std::shared_ptr<Board> Virtual::get_board() {
