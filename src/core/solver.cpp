@@ -3,6 +3,7 @@
 #include <thread>
 #include <set>
 #include <iostream>
+#include "utils/util.h"
 #include "board.h"
 
 #include "solver.h"
@@ -48,12 +49,6 @@ static std::set<Move> guess_move(std::shared_ptr<Board> board) {
     Tile best_tile = undiscovered[0];
     double best_score = -1;
 
-    // Pre-allocate vectors to avoid repeated allocations
-    std::vector<Tile> surrounding;
-    std::vector<Tile> neighbor_tiles;
-    surrounding.reserve(8);
-    neighbor_tiles.reserve(8);
-
     // Cache board dimensions to avoid repeated function calls
     const int board_width = board->get_width();
     const int board_height = board->get_height();
@@ -63,51 +58,25 @@ static std::set<Move> guess_move(std::shared_ptr<Board> board) {
         int valid_neighbors = 0;
 
         // Clear vectors instead of reallocating
-        surrounding.clear();
-
-        // Manually inline get_surrounding_tiles logic for better performance
-        const int start_i = std::max(0, t.y - 1);
-        const int end_i = std::min(board_height - 1, t.y + 1);
-        const int start_j = std::max(0, t.x - 1);
-        const int end_j = std::min(board_width - 1, t.x + 1);
-
-        for (int i = start_i; i <= end_i; i++) {
-            for (int j = start_j; j <= end_j; j++) {
-                surrounding.push_back(board->get_tile(j, i));
-            }
-        }
+		const std::vector<Tile>& surrounding = get_surrounding_tiles<Tile>(t.x, t.y, board_width, board_height, [&](int x, int y) { return board->get_tile(x, y); });
 
         for (const Tile& s : surrounding) {
             // Only consider numbered tiles
             if (s.value > 0) {
-                neighbor_tiles.clear();
-
-                // Manually inline get_surrounding_tiles again
-                const int n_start_i = std::max(0, s.y - 1);
-                const int n_end_i = std::min(board_height - 1, s.y + 1);
-                const int n_start_j = std::max(0, s.x - 1);
-                const int n_end_j = std::min(board_width - 1, s.x + 1);
+                const std::vector<Tile>& neighbors = get_surrounding_tiles<Tile>(s.x, s.y, board_width, board_height, [&](int x, int y) {
+                    return board->get_tile(x, y);
+                    });
 
                 int undiscovered_count = 0;
                 int remaining_mines = s.value;
 
-                // Count undiscovered tiles and remaining mines in one pass
-                for (int i = n_start_i; i <= n_end_i; i++) {
-                    for (int j = n_start_j; j <= n_end_j; j++) {
-                        const Tile& neighbor = board->get_tile(j, i);
-                        if (neighbor.value == UNDISCOVERED) {
-                            undiscovered_count++;
-                        }
-                        else if (neighbor.value == MINE) {
-                            remaining_mines--;
-                        }
+                for (const Tile& neighbor : neighbors) {
+                    if (neighbor.value == UNDISCOVERED) {
+                        undiscovered_count++;
                     }
-                }
-
-                if (undiscovered_count > 0) {
-                    // Calculate safety score: lower ratio of mines to undiscovered = safer
-                    tile_score += 1.0 - (static_cast<double>(remaining_mines) / undiscovered_count);
-                    valid_neighbors++;
+                    else if (neighbor.value == MINE) {
+                        remaining_mines--;
+                    }
                 }
             }
         }
@@ -143,7 +112,7 @@ static std::set<Move> get_moves(std::shared_ptr<Board> board, bool guess) {
     return moves;
 }
 
-Solver::Solver(std::unique_ptr<Game> g, bool v, bool pb) : game(std::move(g)), verbose(v), print_board(pb) {}
+Solver::Solver(std::shared_ptr<Game> g, bool v, bool pb) : game(g), verbose(v), print_board(pb) {}
 
 SolverResult Solver::solve() {
 	const int failed_cycle_threshould = game->get_failed_cycle_threshold(); // Number of failed cycles before guessing

@@ -11,7 +11,7 @@ enum Status {
 // Abstract class representing a Minesweeper game
 class Game {
 public:
-    static std::unique_ptr<Game> get_game(std::string type, const std::chrono::milliseconds& delay_override); // Game factory
+    static std::shared_ptr<Game> get_game(std::string type, const std::chrono::milliseconds& delay_override); // Game factory
     virtual Status status() = 0;
     virtual void update() = 0;
     virtual void click(int x, int y) = 0;

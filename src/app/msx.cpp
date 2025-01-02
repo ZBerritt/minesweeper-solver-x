@@ -75,14 +75,14 @@ int main(int argc, char* argv[]) {
         }
 
         // Get correct game
-        std::unique_ptr<Game> game = Game::get_game(options.game_type, options.delay_override);
+        std::shared_ptr<Game> game = Game::get_game(options.game_type, options.delay_override);
         if (!game) {
             throw std::runtime_error("Invalid game type: " + options.game_type);
         }
 
         // Execute solver
         std::cout << "Starting Minesweeper Solver X for game type " << options.game_type << std::endl;
-        Solver solver = Solver(std::move(game), options.verbose, options.print_board);
+        Solver solver = Solver(game, options.verbose, options.print_board);
         SolverResult result = solver.solve();
 
         // Ending message

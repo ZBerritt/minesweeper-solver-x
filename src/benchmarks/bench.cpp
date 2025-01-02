@@ -5,8 +5,7 @@
 
 #include "bench.h"
 
-static const int ATTEMPTS = 1000;
-static const std::chrono::seconds TIMEOUT = std::chrono::seconds(5);
+static const int ATTEMPTS = 2500;
 
 Benchmark::Benchmark(int w, int h, int m, bool v, bool pb) : width(w), height(h), mines(m), verbose(v), print_board(pb) {}
 
@@ -36,9 +35,11 @@ void Benchmark::full_benchmark(bool verbose, bool print_board) {
 
 
 void Benchmark::run() {
+	std::shared_ptr<Virtual> game;
 	for (int i = 0; i < ATTEMPTS; i++) {
 		auto start = std::chrono::high_resolution_clock::now();
-		Solver solver = Solver(std::make_unique<Virtual>(width, height, mines), verbose, print_board);
+		game = std::make_shared<Virtual>(width, height, mines);
+		Solver solver = Solver(game, verbose, print_board);
 		SolverResult result = solver.solve();
 
 		// Store run time
@@ -48,7 +49,7 @@ void Benchmark::run() {
 
 		// Store run completion percentage
 		percent_completion.push_back(
-			static_cast<double>(solver.get_game()->get_board()->discovered_count()) / (solver.get_game()->get_board()->get_height() * solver.get_game()->get_board()->get_width())
+			static_cast<double>(game->get_board()->discovered_count()) / (game->get_board()->get_height() * game->get_board()->get_width())
 		);
 
 		// Determine if success
@@ -92,5 +93,5 @@ void Benchmark::print_results() {
 	std::cout << "Timeouts: " << timeouts << " (" << std::fixed << std::setprecision(2) << timeout_rate << "%)" << std::endl;
 	std::cout << "Average Completion: " << std::fixed << std::setprecision(2) << average_completion << "%" << std::endl;
 	std::cout << "Elapsed Time: " << std::fixed << std::setprecision(2) << elapsed_seconds << " seconds ("
-		<< std::fixed << std::setprecision(4) << per_attempt_seconds << " seconds per attempt)" << std::endl;
+		<< std::fixed << std::setprecision(5) << per_attempt_seconds << " seconds per attempt)" << std::endl;
 }

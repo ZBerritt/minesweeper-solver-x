@@ -30,12 +30,11 @@ struct Move {
 
 class Solver {
 public:
-    Solver(std::unique_ptr<Game> g, bool v, bool pb);
+    Solver(std::shared_ptr<Game> g, bool v, bool pb);
     SolverResult solve();
-    Game* get_game() const { return game.get(); }
 
 private:
-    std::unique_ptr<Game> game;
+    std::shared_ptr<Game> game;
 	bool verbose;
 	bool print_board;
 };

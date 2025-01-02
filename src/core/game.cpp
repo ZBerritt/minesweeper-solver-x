@@ -4,7 +4,7 @@
 #include "game.h"
 
 
-std::unique_ptr<Game> Game::get_game(std::string type, const std::chrono::milliseconds& delay_override) {
+std::shared_ptr<Game> Game::get_game(std::string type, const std::chrono::milliseconds& delay_override) {
     if (type == "google") {
         return Google::find_game();
     }
