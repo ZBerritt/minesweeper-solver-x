@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include "utils/util.h"
 
 #include "board.h"
 
@@ -37,21 +38,10 @@ std::vector<Tile> Board::get_undiscovered_tiles() {
    return undiscovered;
 }
 
-std::vector<Tile> Board::get_surrounding_tiles(Tile t) {
-    std::vector<Tile> surrounding;
-    surrounding.reserve(8);
-
-    const int start_i = std::max(0, t.y - 1);
-    const int end_i = std::min(height - 1, t.y + 1);
-    const int start_j = std::max(0, t.x - 1);
-    const int end_j = std::min(width - 1, t.x + 1);
-
-    for (int i = start_i; i <= end_i; i++) {
-        for (int j = start_j; j <= end_j; j++) {
-            surrounding.push_back(tiles[to_index(j, i)]);
-        }
-    }
-    return surrounding;
+std::vector<Tile> Board::get_surrounding_tiles(Tile t) const {
+    return surrounding_tiles<Tile>(t.x, t.y, width, height, [&](int xx, int yy) {
+        return tiles[to_index(xx, yy)];
+        });
 }
 
 std::vector<Tile> Board::get_border_tiles() {

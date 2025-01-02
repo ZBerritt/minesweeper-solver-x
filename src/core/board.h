@@ -24,7 +24,7 @@ class Board {
 		int get_width() const { return width; }
         const std::vector<Tile>& get_all_tiles() const { return tiles; }
         std::vector<Tile> get_undiscovered_tiles();
-        std::vector<Tile> get_surrounding_tiles(Tile t);
+        std::vector<Tile> get_surrounding_tiles(Tile t) const;
         std::vector<Tile> get_border_tiles();
 		int remaining_nearby_mines(Tile t);
         int discovered_count();

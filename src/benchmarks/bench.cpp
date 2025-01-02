@@ -12,25 +12,25 @@ Benchmark::Benchmark(int w, int h, int m, bool v, bool pb) : width(w), height(h)
 void Benchmark::full_benchmark(bool verbose, bool print_board) {
 	std::cout << "Minesweeper Solver X Algortihm Benchmark:" << std::endl;
 	
-	std::cout << "Easy board (10x10 m=10)" << std::endl;
-	Benchmark bench = Benchmark(10, 10, 10, verbose, print_board);
+	std::cout << "Easy board (10x8 m=10)" << std::endl;
+	Benchmark bench = Benchmark(10, 8, 10, verbose, print_board);
 	bench.run();
 	bench.print_results();
 	
-	std::cout << "Medium board (15x15 m=40)" << std::endl;
-	Benchmark bench2 = Benchmark(15, 15, 40, verbose, print_board);
+	std::cout << "Medium board (18x14 m=40)" << std::endl;
+	Benchmark bench2 = Benchmark(18, 14, 40, verbose, print_board);
 	bench2.run();
 	bench2.print_results();
 	
-	std::cout << "Hard board (20x20 m=100)" << std::endl;
-	Benchmark bench3 = Benchmark(20, 20, 100, verbose, print_board);
+	std::cout << "Hard board (24x20 m=99)" << std::endl;
+	Benchmark bench3 = Benchmark(24, 20, 99, verbose, print_board);
 	bench3.run();
 	bench3.print_results();
 
-	std::cout << "Impossible board (50x50 m=1000)" << std::endl;
-	Benchmark bench4 = Benchmark(50, 50, 1000, verbose, print_board);
-	bench4.run();
-	bench4.print_results();
+	//std::cout << "Impossible board (50x50 m=625)" << std::endl;
+	//Benchmark bench4 = Benchmark(50, 50, 625, verbose, print_board);
+	//bench4.run();
+	//bench4.print_results();
 }
 
 

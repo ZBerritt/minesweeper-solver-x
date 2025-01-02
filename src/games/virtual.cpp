@@ -1,6 +1,7 @@
 #include <random>
 #include <algorithm>
 #include <cassert>
+#include "utils/util.h"
 #include "virtual.h"
 
 Virtual::Virtual(int w, int h, int m, std::chrono::milliseconds d) : Game("Virtual", w, h, d) {
@@ -45,15 +46,9 @@ void Virtual::create_board(int start_x, int start_y) {
 }
 
 std::vector<std::pair<int, int>> Virtual::get_surrounding_tiles(int x, int y) {
-    std::vector<std::pair<int, int>> surrounding_tiles;
-    for (int i = y - 1; i <= y + 1; i++) {
-        for (int j = x - 1; j <= x + 1; j++) {
-            if (i >= 0 && i < board->get_height() && j >= 0 && j < board->get_width()) {
-                surrounding_tiles.push_back(std::pair<int, int>(j, i));
-            }
-        }
-    }
-    return surrounding_tiles;
+    return surrounding_tiles<std::pair<int, int>>(x, y, width, height, [&](int xx, int yy) {
+        return std::pair<int, int>(xx, yy);
+        });
 }
 
 int Virtual::tile_value(int x, int y) {

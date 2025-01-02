@@ -58,12 +58,12 @@ static std::set<Move> guess_move(std::shared_ptr<Board> board) {
         int valid_neighbors = 0;
 
         // Clear vectors instead of reallocating
-		const std::vector<Tile>& surrounding = get_surrounding_tiles<Tile>(t.x, t.y, board_width, board_height, [&](int x, int y) { return board->get_tile(x, y); });
+		const std::vector<Tile>& surrounding = surrounding_tiles<Tile>(t.x, t.y, board_width, board_height, [&](int x, int y) { return board->get_tile(x, y); });
 
         for (const Tile& s : surrounding) {
             // Only consider numbered tiles
             if (s.value > 0) {
-                const std::vector<Tile>& neighbors = get_surrounding_tiles<Tile>(s.x, s.y, board_width, board_height, [&](int x, int y) {
+                const std::vector<Tile>& neighbors = surrounding_tiles<Tile>(s.x, s.y, board_width, board_height, [&](int x, int y) {
                     return board->get_tile(x, y);
                     });
 
