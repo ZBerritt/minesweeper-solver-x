@@ -12,6 +12,7 @@ public:
     void update() override;
     void click(int x, int y) override;
     void flag(int x, int y) override;
+	int get_failed_cycle_threshold() override { return 4; }
 
 private:
     // Cache frequently used values

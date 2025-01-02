@@ -17,6 +17,7 @@ public:
 	void flag(int x, int y) override;
 	void update() override;
 	Status status() override;
+	int get_failed_cycle_threshold() override { return 0; }
 private:
 	int mines;
 	std::vector<std::vector<VirtualTile>> tiles;

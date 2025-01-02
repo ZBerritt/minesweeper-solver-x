@@ -1,33 +1,19 @@
 #include <vector>
+#include <chrono>
+#include <thread>
+#include <set>
+#include <iostream>
+#include "board.h"
 
 #include "solver.h"
 
-Solver::Solver(std::shared_ptr<Board> b) : board(b) {}
-
-std::set<Move> Solver::get_moves(bool guess) {
-    int discovered = board->discovered_count();
-    if (discovered == 0) {
-        return guess ? first_move() : std::set<Move>{};
-    }
-    else if (discovered == board->get_width() * board->get_height()) {
-        return std::set<Move>{};
-    }
-
-    std::set<Move> moves = basic_move();
-    if (moves.empty()) {
-        moves = guess ? guess_move() : std::set<Move>{};
-    }
-    return moves;
-}
-
-std::set<Move> Solver::first_move() {
+static std::set<Move> first_move(std::shared_ptr<Board> board) {
     std::vector<Tile> undiscovered = board->get_undiscovered_tiles();
     int mid_index = (board->get_height() / 2 * board->get_width()) + (board->get_width() / 2);
     return { { CLICK_ACTION, undiscovered[mid_index].x, undiscovered[mid_index].y } };
 }
 
-
-std::set<Move> Solver::basic_move() {
+static std::set<Move> basic_move(std::shared_ptr<Board> board) {
     std::set<Move> moves;
     for (Tile t : board->get_border_tiles()) {
         int remaining_mines = board->remaining_nearby_mines(t);
@@ -53,8 +39,7 @@ std::set<Move> Solver::basic_move() {
     return moves;
 }
 
-
-std::set<Move> Solver::guess_move() {
+static std::set<Move> guess_move(std::shared_ptr<Board> board) {
     const std::vector<Tile>& undiscovered = board->get_undiscovered_tiles();
     if (undiscovered.empty()) {
         return std::set<Move>();
@@ -140,4 +125,65 @@ std::set<Move> Solver::guess_move() {
     }
 
     return { { CLICK_ACTION, best_tile.x, best_tile.y } };
+}
+
+static std::set<Move> get_moves(std::shared_ptr<Board> board, bool guess) {
+    int discovered = board->discovered_count();
+    if (discovered == 0) {
+        return guess ? first_move(board) : std::set<Move>{};
+    }
+    else if (discovered == board->get_width() * board->get_height()) {
+        return std::set<Move>{};
+    }
+
+    std::set<Move> moves = basic_move(board);
+    if (moves.empty()) {
+        moves = guess ? guess_move(board) : std::set<Move>{};
+    }
+    return moves;
+}
+
+Solver::Solver(std::unique_ptr<Game> g, bool v, bool pb) : game(std::move(g)), verbose(v), print_board(pb) {}
+
+SolverResult Solver::solve() {
+	const int failed_cycle_threshould = game->get_failed_cycle_threshold(); // Number of failed cycles before guessing
+	const std::shared_ptr<Board> board = game->get_board();
+    int failed_cycles = 0;
+    bool guessing = true;
+
+    while (game->status() == IN_PROGRESS) {
+        if (print_board) {
+            game->get_board()->print();
+        }
+        std::set<Move> moves = get_moves(board, guessing);
+        if (moves.empty() && guessing) {
+            return STUCK;
+        }
+        else if (moves.empty() && ++failed_cycles >= failed_cycle_threshould) {
+            guessing = true;
+            failed_cycles = 0;
+        }
+        else {
+            for (Move move : moves) {
+                if (verbose) {
+                    std::cout << (move.action == CLICK_ACTION ? "Click" : "Flag") << ": (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
+                }
+                if (move.action == FLAG_ACTION) {
+                    game->get_board()->set_tile(move.x, move.y, MINE); 
+                    //game->flag(move.x, move.y); // Commented out for now
+                }
+                else if (move.action == CLICK_ACTION) {
+                    game->click(move.x, move.y);
+                }
+            }
+        }
+        std::this_thread::sleep_for(game->get_move_delay());
+        game->update();
+    }
+
+    if (print_board) {
+        game->get_board()->print();
+    }
+
+	return game->status() == WON ? SUCCESS : FAILURE;
 }

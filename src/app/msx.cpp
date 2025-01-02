@@ -1,121 +1,107 @@
 ﻿#include <iostream>
 #include <chrono>
-#include <thread>
 #include <string>
 #include "core/game.h"
 #include "benchmarks/bench.h"
 #include "core/solver.h"
 
-static const std::string HELP_MESSAGE = "Minesweeper Solver X [Version 1.0.0]\nUsage: msx [-hbpvd] {google,veasy,vmedium,vhard,vimpossible}";
+namespace {
+    constexpr std::string_view HELP_MESSAGE = "Minesweeper Solver X [Version 1.0.0]\nUsage: msx [-hpvd] {google,veasy,vmedium,vhard,vimpossible} | msx -b[vp]";
+    
+    struct ProgramOptions {
+		bool benchmark = false;
+		bool verbose = false;
+		bool print_board = false;
+        std::chrono::milliseconds delay_override{};
+		std::string game_type;
+    };
+
+    ProgramOptions arg_parse(int argc, char* argv[]) {
+        ProgramOptions options;
+
+
+        for (int i = 1; i < argc; i++) {
+            std::string_view arg = std::string_view(argv[i]);
+            if (arg.empty()) continue; 
+
+            if (arg[0] == '-') {
+                for (size_t j = 1; j < arg.length(); j++) {
+                    switch (arg[j]) {
+                        case 'b':
+							options.benchmark = true;
+                            break;
+					    case 'h':
+						    std::cout << HELP_MESSAGE << std::endl;
+						    std::exit(0);
+					    case 'p':
+						    options.print_board = true;
+						    break;
+					    case 'v':
+						    options.verbose = true;
+						    break;
+					    case 'd':
+                            if (i + 1 >= argc) {
+                                throw std::runtime_error("Must specify a delay in milliseconds");
+                            }
+                            options.delay_override = std::chrono::milliseconds(std::stoi(argv[++i]));
+						    break;
+					    default:
+                            throw std::runtime_error(
+                                std::string("Unknown argument -") + arg[j]);
+                    }
+                }
+			}
+			else {
+				options.game_type = std::string(argv[i]);
+			}
+        }
+
+        if (options.game_type.empty() && !options.benchmark) {
+            throw std::runtime_error("Game type must be specified");
+        }
+
+        return options;
+    }
+}
+
+
 
 int main(int argc, char* argv[]) {
-    // Options
-    std::chrono::milliseconds delay_override{};
-    std::string game_type;
-    bool print_board = false;
-    bool verbose = false;
-    for (int i = 1; i < argc; i++) {
-        std::string arg = std::string(argv[i]);
-        if (arg.at(0) == '-') {
-            for (int j = 1; j < arg.size(); j++) {
-                if (arg.at(j) == 'b') {
-                    Benchmark::full_benchmark();
-                    return 0;
-                }
-                else if (arg.at(j) == 'h') {
-                    std::cout << HELP_MESSAGE << std::endl;
-                    return 0;
-                }
-                else if (arg.at(j) == 'p') {
-                    print_board = true;
-                }
-                else if (arg.at(j) == 'v') {
-                    verbose = true;
-                }
-                else if (arg.at(j) == 'd') {
-                    if (i + 1 >= argc) {
-                        std::cerr << "Must specify a delay in milliseconds" << std::endl;
-                        return -1;
-                    }
-                    delay_override = std::chrono::milliseconds(stoi(std::string(argv[i + 1])));
-                    i++;
-                }
-                else {
-                    std::cerr << "Unknown argument -" << arg.at(j) << std::endl;
-                    std::cout << HELP_MESSAGE << std::endl;
-                    return -1;
-                }
-            }
+    try {
+        ProgramOptions options = arg_parse(argc, argv);
+        if (options.benchmark) {
+			Benchmark::full_benchmark(options.verbose, options.print_board);
+			return 0;
         }
-        else {
-            game_type = std::string(argv[i]);
+
+        // Get correct game
+        std::unique_ptr<Game> game = Game::get_game(options.game_type, options.delay_override);
+        if (!game) {
+            throw std::runtime_error("Invalid game type: " + options.game_type);
         }
-    }
 
-    if (game_type.empty()) {
-        std::cout << HELP_MESSAGE << std::endl;
-        return 0;
-    }
+        // Execute solver
+        std::cout << "Starting Minesweeper Solver X for game type " << options.game_type << std::endl;
+        Solver solver = Solver(std::move(game), options.verbose, options.print_board);
+        SolverResult result = solver.solve();
 
-    // Get correct game
-    std::unique_ptr<Game> game = Game::get_game(game_type, delay_override);
-    if (!game) {
-       std::cerr << "Invalid game type " << game_type << std::endl;
-       return -1;
-    }
-
-    // Execute solver
-    std::cout << "Starting Minesweeper Solver X for game type " << game_type << std::endl;
-    Solver solver(game->get_board());
-    int empty_move_cycles = 0;
-    bool guessing = true;
-    while (game->status() == IN_PROGRESS) {
-        if (print_board) {
-            game->get_board()->print();
-        }
-        std::set<Move> moves = solver.get_moves(guessing);
-		if (moves.empty()) {
-            if (guessing) {
+        // Ending message
+        switch (result) {
+            case SUCCESS:
+                std::cout << "I won!" << std::endl;
+                break;
+            case FAILURE:
+                std::cout << "I lost..." << std::endl;
+                break;
+            case STUCK:
+                std::cout << "I'm stuck..." << std::endl;
                 break;
             }
-            empty_move_cycles++;
-            if (empty_move_cycles >= 4) {
-                guessing = true;
-            }
-        }
-        else {
-            empty_move_cycles = 0;
-            guessing = false;
-            for (Move move : moves) {
-                if (verbose) {
-                    std::cout << (move.action == CLICK_ACTION ? "Click" : "Flag") << ": (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
-                }
-                if (move.action == FLAG_ACTION) {
-                    game->get_board()->set_tile(move.x, move.y, MINE); // Manually set as mine for algorithm
-                    //game->flag(move.x, move.y); // Commented out to prevent flagging
-                }
-                else if (move.action == CLICK_ACTION) {
-                    game->click(move.x, move.y);
-                }
-            }
-        }
-        std::this_thread::sleep_for(game->get_move_delay());
-        game->update();
+        return 0;
     }
-
-    if (print_board) {
-        game->get_board()->print();
+    catch (const std::exception& e) {
+		std::cerr << e.what() << std::endl;
+		std::cout << HELP_MESSAGE << std::endl;
+        return 1;
     }
-
-    // Ending message
-	if (game->status() == IN_PROGRESS) {
-		std::cout << "I'm stuck..." << std::endl;
-	} else if (game->status() == WON) {
-        std::cout << "I win!" << std::endl;
-    }
-    else if (game->status() == LOST) {
-        std::cout << "Game over." << std::endl;
-    }
-
-    return 0;
 }

@@ -1,11 +1,16 @@
 #pragma once
-#include "board.h"
-#include <set>
 #include <memory>
+#include "game.h"
 
 enum Action {
     CLICK_ACTION,
     FLAG_ACTION
+};
+
+enum SolverResult {
+    SUCCESS,
+    FAILURE,
+    STUCK
 };
 
 struct Move {
@@ -25,12 +30,12 @@ struct Move {
 
 class Solver {
 public:
-    Solver(std::shared_ptr<Board> b);
-    std::set<Move> get_moves(bool guess); 
+    Solver(std::unique_ptr<Game> g, bool v, bool pb);
+    SolverResult solve();
+    Game* get_game() const { return game.get(); }
 
 private:
-    std::shared_ptr<Board> board;
-    std::set<Move> first_move();
-    std::set<Move> basic_move();
-    std::set<Move> guess_move();
+    std::unique_ptr<Game> game;
+	bool verbose;
+	bool print_board;
 };

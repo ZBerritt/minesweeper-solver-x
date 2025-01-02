@@ -8,28 +8,28 @@
 static const int ATTEMPTS = 1000;
 static const std::chrono::seconds TIMEOUT = std::chrono::seconds(5);
 
-Benchmark::Benchmark(int w, int h, int m) : width(w), height(h), mines(m), successes(0), failures(0), timeouts(0) {}
+Benchmark::Benchmark(int w, int h, int m, bool v, bool pb) : width(w), height(h), mines(m), verbose(v), print_board(pb) {}
 
-void Benchmark::full_benchmark() {
+void Benchmark::full_benchmark(bool verbose, bool print_board) {
 	std::cout << "Minesweeper Solver X Algortihm Benchmark:" << std::endl;
 	
 	std::cout << "Easy board (10x10 m=10)" << std::endl;
-	Benchmark bench(10, 10, 10);
+	Benchmark bench = Benchmark(10, 10, 10, verbose, print_board);
 	bench.run();
 	bench.print_results();
 	
 	std::cout << "Medium board (15x15 m=40)" << std::endl;
-	Benchmark bench2(15, 15, 40);
+	Benchmark bench2 = Benchmark(15, 15, 40, verbose, print_board);
 	bench2.run();
 	bench2.print_results();
 	
 	std::cout << "Hard board (20x20 m=100)" << std::endl;
-	Benchmark bench3(20, 20, 100);
+	Benchmark bench3 = Benchmark(20, 20, 100, verbose, print_board);
 	bench3.run();
 	bench3.print_results();
 
 	std::cout << "Impossible board (50x50 m=1000)" << std::endl;
-	Benchmark bench4(50, 50, 1000);
+	Benchmark bench4 = Benchmark(50, 50, 1000, verbose, print_board);
 	bench4.run();
 	bench4.print_results();
 }
@@ -37,30 +37,10 @@ void Benchmark::full_benchmark() {
 
 void Benchmark::run() {
 	for (int i = 0; i < ATTEMPTS; i++) {
-		Virtual vboard = Virtual(width, height, mines);
-		Solver solver = Solver(vboard.get_board());
 		auto start = std::chrono::high_resolution_clock::now();
-		while (vboard.status() == IN_PROGRESS) {
-			std::set<Move> moves = solver.get_moves(true);
-			// Check timeout condition
-			auto current_time = std::chrono::high_resolution_clock::now();
-			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(current_time - start);
-			if (elapsed > TIMEOUT) {
-				break;
-			}
-			for (Move move : moves) {
-				if (move.action == FLAG_ACTION) {
-					//std::cout << "Flag: (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
-					vboard.get_board()->set_tile(move.x, move.y, MINE);
-				}
-				else if (move.action == CLICK_ACTION) {
-					//std::cout << "Click: (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
-					vboard.click(move.x, move.y);
-				}
-			}
-			vboard.update();
-			//vboard.get_board()->print();
-		}
+		Solver solver = Solver(std::make_unique<Virtual>(width, height, mines), verbose, print_board);
+		SolverResult result = solver.solve();
+
 		// Store run time
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -68,19 +48,20 @@ void Benchmark::run() {
 
 		// Store run completion percentage
 		percent_completion.push_back(
-			static_cast<double>(vboard.get_board()->discovered_count()) /
-			static_cast<double>(vboard.get_board()->get_height() * vboard.get_board()->get_width())
+			static_cast<double>(solver.get_game()->get_board()->discovered_count()) / (solver.get_game()->get_board()->get_height() * solver.get_game()->get_board()->get_width())
 		);
 
 		// Determine if success
-		if (vboard.status() == WON) {
+		switch (result) {
+		case SUCCESS:
 			successes++;
-		}
-		else if (vboard.status() == LOST) {
+			break;
+		case FAILURE:
 			failures++;
-		}
-		else {
+			break;
+		case STUCK:
 			timeouts++;
+			break;
 		}
 	}
 }
