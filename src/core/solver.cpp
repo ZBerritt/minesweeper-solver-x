@@ -133,6 +133,7 @@ SolverResult Solver::solve() {
             failed_cycles = 0;
         }
         else {
+            guessing = false;
             for (Move move : moves) {
                 if (verbose) {
                     std::cout << (move.action == CLICK_ACTION ? "Click" : "Flag") << ": (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;

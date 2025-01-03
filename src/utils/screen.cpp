@@ -93,46 +93,49 @@ Pixel Screen::get_pixel(uint32_t x, uint32_t y) const noexcept {
 }
 
 // Screen pixel iterator
-Screen::PixelIterator::PixelIterator(const Screen* s, Position p) : screen(s), pos(p) {}
+Screen::PixelIterator::PixelIterator(const Screen* s, Position sp, Position ep) : screen(s), curr_pos(sp), end_pos(ep) {}
 
 Pixel Screen::PixelIterator::pixel() const noexcept { 
-    return screen->get_pixel(pos.x, pos.y);
+    return screen->get_pixel(curr_pos.x, curr_pos.y);
 }
 
 Position Screen::PixelIterator::position() const noexcept { 
-    return pos;
+    return curr_pos;
+}
+
+Position Screen::PixelIterator::end() const noexcept {
+    return end_pos;
 }
 
 Screen::PixelIterator& Screen::PixelIterator::next() noexcept {
-    if (++pos.x >= screen->get_dimension().width) {
-        pos.x = 0;
-        ++pos.y;
+    if (++curr_pos.x >= screen->get_dimension().width) {
+        curr_pos.x = 0;
+        ++curr_pos.y;
     }
     return *this;
 }
 
-bool Screen::PixelIterator::is_end() noexcept {
-    return pos.x >= screen->get_dimension().width || pos.y >= screen->get_dimension().height;
-}
-
 // Skip to specific position
 Screen::PixelIterator& Screen::PixelIterator::jump_to(Position new_pos) noexcept {
-    pos = new_pos;
+    curr_pos = new_pos;
     return *this;
 }
 
 // Shift over 1 row
 Screen::PixelIterator& Screen::PixelIterator::next_row() noexcept {
-    ++pos.y;
+    ++curr_pos.y;
     return *this;
 }
 
 Screen::PixelIterator Screen::begin() const noexcept { 
-    return PixelIterator(this, Position(0, 0));
+    return PixelIterator(this, Position(0, 0), Position(dim.width - 1, dim.height - 1));
 }
 
-Screen::PixelIterator Screen::iterate_from(Position start_pos) const noexcept {
-    return PixelIterator(this, start_pos);
+Screen::PixelIterator Screen::iterate_from(Position start_pos, Position end_pos) const noexcept {
+    if (end_pos == Position{}) {
+        end_pos = Position(dim.width - 1, dim.height - 1);
+    }
+    return PixelIterator(this, start_pos, end_pos);
 }
 
 void move_mouse(Position pos) {

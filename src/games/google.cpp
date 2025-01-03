@@ -2,7 +2,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
-
+#include "utils/util.h"
 #include "google.h"
 
 // Generates our 81 sample points for tile detection
@@ -21,19 +21,6 @@ std::vector<Pixel> Google::generate_sample_points(int x, int y) const {
 
     return samples;
 }
-
-static inline bool color_in_range(const Pixel& a, const Pixel& b, int range = 10) {
-    return abs(a.red - b.red) <= range &&
-        abs(a.green - b.green) <= range &&
-        abs(a.blue - b.blue) <= range;
-}
-
-static double get_color_distance(const Pixel& a, const Pixel& b) {
-    int dr = static_cast<int>(a.red) - b.red;
-    int dg = static_cast<int>(a.green) - b.green;
-    int db = static_cast<int>(a.blue) - b.blue;
-    return std::sqrt(dr * dr + dg * dg + db * db);
-};
 
 Google::Google(const Position& pos, const Dimension& board_dim, const Dimension& box_dim) : 
     Game("Google", board_dim.width / box_dim.width, board_dim.height / box_dim.height, std::chrono::milliseconds(250))
@@ -54,7 +41,7 @@ Status Google::status() {
     }
 
     // Check for game over condition
-    for (Screen::PixelIterator it = screen.begin(); !it.is_end(); it.next()) {
+    for (Screen::PixelIterator it = screen.begin(); it.position() <= it.end(); it.next()) {
         if (color_in_range(it.pixel(), RESULTS)) {
             return LOST;
         }
@@ -187,7 +174,7 @@ static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
 
     // Find width
     
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it.position() <= it.end(); it.next()) {
         Position pos = it.position();
         if (color_in_range(it.pixel(), DARK_UND, 5)) {
             width = pos.x - top_left.x;
@@ -196,7 +183,7 @@ static Dimension find_box_dimensions(Screen& screen, const Position& top_left) {
     }
 
     // Find y
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next_row()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it.position() <= it.end(); it.next_row()) {
         Position pos = it.position();
         if (color_in_range(it.pixel(), DARK_UND, 5)) {
             height = pos.y - top_left.y;
@@ -213,7 +200,7 @@ static Dimension find_board_dimensions(Screen& screen, const Position& top_left)
     uint32_t height = 0;
 
     // Find width
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it.position() <= it.end(); it.next()) {
         Position pos = it.position();
         Pixel pixel = it.pixel();
         if (!color_in_range(pixel, LIGHT_UND, 5) && !color_in_range(pixel, DARK_UND, 5)) {
@@ -223,7 +210,7 @@ static Dimension find_board_dimensions(Screen& screen, const Position& top_left)
     }
 
     // Find y
-    for (Screen::PixelIterator it = screen.iterate_from(top_left); !it.is_end(); it.next_row()) {
+    for (Screen::PixelIterator it = screen.iterate_from(top_left); it.position() <= it.end(); it.next_row()) {
         Position pos = it.position();
         Pixel pixel = it.pixel();
         if (!color_in_range(pixel, LIGHT_UND, 5) && !color_in_range(pixel, DARK_UND, 5)) {
@@ -242,7 +229,7 @@ std::unique_ptr<Google> Google::find_game() {
    
     while (true) {
         screen.take_screenshot();
-        for (Screen::PixelIterator it = screen.begin(); !it.is_end(); it.next()) {
+        for (Screen::PixelIterator it = screen.begin(); it.position() <= it.end(); it.next()) {
             if (color_in_range(it.pixel(), LIGHT_UND)) {
                 Position position = it.position();
                 Dimension box_dimensions = find_box_dimensions(screen, position);

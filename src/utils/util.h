@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <functional>
-#include <algorithm>
+#include "screen.h"
 
 template <typename T>
 std::vector<T> surrounding_tiles(int x, int y, int width, int height, const std::function<T(int, int)>& op) {
@@ -21,3 +21,8 @@ std::vector<T> surrounding_tiles(int x, int y, int width, int height, const std:
 
     return surrounding;
 }
+
+
+bool color_in_range(const Pixel& a, const Pixel& b, int range = 10);
+
+double get_color_distance(const Pixel& a, const Pixel& b);

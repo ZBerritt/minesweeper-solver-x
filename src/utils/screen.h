@@ -16,6 +16,30 @@ struct Position {
     uint32_t x;
     uint32_t y;
     Position(uint32_t x = 0, uint32_t y = 0) : x(x), y(y) {}
+
+    bool operator<(const Position& other) const {
+        return y < other.y || (y == other.y && x < other.x);
+    }
+
+    bool operator>(const Position& other) const {
+        return y > other.y || (y == other.y && x > other.x);
+    }
+
+    bool operator<=(const Position& other) const {
+        return y < other.y || (y == other.y && x <= other.x);
+    }
+
+    bool operator>=(const Position& other) const {
+        return y > other.y || (y == other.y && x >= other.x);
+    }
+
+    bool operator==(const Position& other) const {
+        return x == other.x && y == other.y;
+    }
+
+    bool operator!=(const Position& other) const {
+        return x != other.x || y != other.y;
+    }
 };
 
 struct Dimension {
@@ -37,17 +61,18 @@ public:
     // Iterator
     struct PixelIterator {
         const Screen* screen;
-        Position pos;
+        Position curr_pos;
+        Position end_pos;
 
-        PixelIterator(const Screen* s, Position p);
+        PixelIterator(const Screen* s, Position sp, Position ep);
 
         Pixel pixel() const noexcept;
         Position position() const noexcept;
+        Position end() const noexcept;
 
         PixelIterator& next() noexcept;
         PixelIterator& jump_to(Position new_pos) noexcept;
         PixelIterator& next_row() noexcept;
-        bool is_end() noexcept;
     };
     Screen(Position p = {0, 0}, 
         Dimension d = { static_cast<uint32_t>(GetSystemMetrics(SM_CXVIRTUALSCREEN)), static_cast<uint32_t>(GetSystemMetrics(SM_CYVIRTUALSCREEN)) });
@@ -59,19 +84,17 @@ public:
 
     // Iteration
     PixelIterator begin() const noexcept;
-    PixelIterator iterate_from(Position start_pos) const noexcept;
-
-    // Screenshot resources and methods
-    HDC screen_dc;
-    HDC memory_dc;
-    HBITMAP bitmap;
-
+    PixelIterator iterate_from(Position start_pos, Position end_pos = Position{}) const noexcept;
 private:
     Position pos;
     Dimension dim;
     uint32_t stride;  // Added for proper pixel addressing
     std::unique_ptr<uint8_t[]> bitmap_data;  // Raw bitmap data instead of vector of Pixels
        
+    // Screenshot resources and methods
+    HDC screen_dc;
+    HDC memory_dc;
+    HBITMAP bitmap;
     bool init_resources();
     void clean_resources();
 };
