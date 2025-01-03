@@ -2,7 +2,6 @@
 #include <chrono>
 #include <thread>
 #include <set>
-#include <iostream>
 #include "utils/util.h"
 #include "board.h"
 
@@ -58,24 +57,25 @@ static std::set<Move> guess_move(std::shared_ptr<Board> board) {
         int valid_neighbors = 0;
 
         // Clear vectors instead of reallocating
-		const std::vector<Tile>& surrounding = surrounding_tiles<Tile>(t.x, t.y, board_width, board_height, [&](int x, int y) { return board->get_tile(x, y); });
+		const std::vector<Tile>& surrounding = surrounding_tiles<Tile>(t.x, t.y, board_width, board_height, 
+            [&](int x, int y) { return board->get_tile(x, y); });
 
         for (const Tile& s : surrounding) {
             // Only consider numbered tiles
             if (s.value > 0) {
-                const std::vector<Tile>& neighbors = surrounding_tiles<Tile>(s.x, s.y, board_width, board_height, [&](int x, int y) {
-                    return board->get_tile(x, y);
-                    });
+                const std::vector<Tile>& neighbors = surrounding_tiles<Tile>(s.x, s.y, board_width, board_height,
+                    [&](int x, int y) { return board->get_tile(x, y); });
 
                 int undiscovered_count = 0;
-                int remaining_mines = s.value;
+                int remaining_mines = board->remaining_nearby_mines(s);
 
                 for (const Tile& neighbor : neighbors) {
+                    if (neighbor.value == UNKNOWN) {
+                        valid_neighbors = 0;
+                        break;
+                    }
                     if (neighbor.value == UNDISCOVERED) {
                         undiscovered_count++;
-                    }
-                    else if (neighbor.value == MINE) {
-                        remaining_mines--;
                     }
                 }
             }
@@ -112,17 +112,20 @@ static std::set<Move> get_moves(std::shared_ptr<Board> board, bool guess) {
     return moves;
 }
 
-Solver::Solver(std::shared_ptr<Game> g, bool v, bool pb) : game(g), verbose(v), print_board(pb) {}
+Solver::Solver(std::shared_ptr<Game> g, bool v) : game(g), verbose(v), display(nullptr) {}
 
 SolverResult Solver::solve() {
 	const int failed_cycle_threshould = game->get_failed_cycle_threshold(); // Number of failed cycles before guessing
 	const std::shared_ptr<Board> board = game->get_board();
+    if (verbose) {
+        display = std::make_shared<BoardDisplay>(board);
+    }
     int failed_cycles = 0;
     bool guessing = true;
 
     while (game->status() == IN_PROGRESS) {
-        if (print_board) {
-            game->get_board()->print();
+        if (verbose) {
+            display->update_board();
         }
         std::set<Move> moves = get_moves(board, guessing);
         if (moves.empty() && guessing) {
@@ -136,7 +139,8 @@ SolverResult Solver::solve() {
             guessing = false;
             for (Move move : moves) {
                 if (verbose) {
-                    std::cout << (move.action == CLICK_ACTION ? "Click" : "Flag") << ": (" << std::to_string(move.x) << ", " << std::to_string(move.y) << ")" << std::endl;
+                    display->print(std::string(move.action == CLICK_ACTION ? "Click" : "Flag") 
+                        + ": (" + std::to_string(move.x) + ", " + std::to_string(move.y) + ")");
                 }
                 if (move.action == FLAG_ACTION) {
                     game->get_board()->set_tile(move.x, move.y, MINE); 
@@ -151,8 +155,8 @@ SolverResult Solver::solve() {
         game->update();
     }
 
-    if (print_board) {
-        game->get_board()->print();
+    if (verbose) {
+        display->update_board();
     }
 
 	return game->status() == WON ? SUCCESS : FAILURE;

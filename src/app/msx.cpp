@@ -6,7 +6,7 @@
 #include "core/solver.h"
 
 namespace {
-    constexpr std::string_view HELP_MESSAGE = "Minesweeper Solver X [Version 1.0.0]\nUsage: msx [-hpvd] {google,veasy,vmedium,vhard,vimpossible} | msx -b[vp]";
+    constexpr std::string_view HELP_MESSAGE = "Minesweeper Solver X [Version 1.0.0]\nUsage: msx [-hvd] {google,veasy,vmedium,vhard,vimpossible} | msx -b[v]";
     
     struct ProgramOptions {
 		bool benchmark = false;
@@ -33,9 +33,6 @@ namespace {
 					    case 'h':
 						    std::cout << HELP_MESSAGE << std::endl;
 						    std::exit(0);
-					    case 'p':
-						    options.print_board = true;
-						    break;
 					    case 'v':
 						    options.verbose = true;
 						    break;
@@ -70,7 +67,7 @@ int main(int argc, char* argv[]) {
     try {
         ProgramOptions options = arg_parse(argc, argv);
         if (options.benchmark) {
-			Benchmark::full_benchmark(options.verbose, options.print_board);
+			Benchmark::full_benchmark(options.verbose);
 			return 0;
         }
 
@@ -82,7 +79,7 @@ int main(int argc, char* argv[]) {
 
         // Execute solver
         std::cout << "Starting Minesweeper Solver X for game type " << options.game_type << std::endl;
-        Solver solver = Solver(game, options.verbose, options.print_board);
+        Solver solver = Solver(game, options.verbose);
         SolverResult result = solver.solve();
 
         // Ending message

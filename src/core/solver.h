@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include "game.h"
+#include <utils/terminal.h>
 
 enum Action {
     CLICK_ACTION,
@@ -30,11 +31,11 @@ struct Move {
 
 class Solver {
 public:
-    Solver(std::shared_ptr<Game> g, bool v, bool pb);
+    Solver(std::shared_ptr<Game> g, bool v);
     SolverResult solve();
 
 private:
     std::shared_ptr<Game> game;
+    std::shared_ptr<BoardDisplay> display;
 	bool verbose;
-	bool print_board;
 };

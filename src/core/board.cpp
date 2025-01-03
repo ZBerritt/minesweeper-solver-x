@@ -60,7 +60,7 @@ std::vector<Tile> Board::get_border_tiles() {
     return border;
 }
 
-int Board::remaining_nearby_mines(Tile t) {
+int Board::remaining_nearby_mines(Tile t) const {
     int remaining_mines = t.value;
     std::vector<Tile> surrounding = get_surrounding_tiles(t);
     for (Tile s : surrounding) {
@@ -75,26 +75,4 @@ int Board::remaining_nearby_mines(Tile t) {
 int Board::discovered_count() {
     return std::count_if(tiles.begin(), tiles.end(),
         [](const Tile& tile) { return tile.value != UNDISCOVERED; });
-}
-
-void Board::print() {
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            Tile tile = tiles[to_index(j, i)];
-            if (tile.value == UNDISCOVERED) {
-                std::cout << "-";
-            }
-            else if (tile.value == MINE) {
-                std::cout << "F";
-            }
-            else if (tile.value == UNKNOWN) {
-                std::cout << "?";
-            } else {
-                std::cout << tile.value;
-            }
-            std::cout << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
 }

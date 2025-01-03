@@ -11,6 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(utils STATIC
     utils/screen.cpp
     utils/util.cpp
+    utils/terminal.cpp
 )
 
 add_library(core STATIC

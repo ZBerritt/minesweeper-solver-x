@@ -26,9 +26,8 @@ class Board {
         std::vector<Tile> get_undiscovered_tiles();
         std::vector<Tile> get_surrounding_tiles(Tile t) const;
         std::vector<Tile> get_border_tiles();
-		int remaining_nearby_mines(Tile t);
+		int remaining_nearby_mines(Tile t) const;
         int discovered_count();
-        void print();
 
     private:
         int height;

@@ -3,10 +3,10 @@
 
 class Benchmark {
 public:
-	Benchmark(int w, int h, int m, bool v, bool pb);
+	Benchmark(int w, int h, int m, bool v);
 	void run();
 	void print_results();
-	static void full_benchmark(bool verbose, bool print_board);
+	static void full_benchmark(bool verbose);
 private:
 	// Board config
 	int width;

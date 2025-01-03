@@ -7,23 +7,24 @@
 
 static const int ATTEMPTS = 2500;
 
-Benchmark::Benchmark(int w, int h, int m, bool v, bool pb) : width(w), height(h), mines(m), verbose(v), print_board(pb) {}
+Benchmark::Benchmark(int w, int h, int m, bool v) : width(w), height(h), mines(m), verbose(v) {}
 
-void Benchmark::full_benchmark(bool verbose, bool print_board) {
+void Benchmark::full_benchmark(bool verbose) {
+	verbose = false; // TODO: New verbose breaks benchmarking
 	std::cout << "Minesweeper Solver X Algortihm Benchmark:" << std::endl;
 	
 	std::cout << "Easy board (10x8 m=10)" << std::endl;
-	Benchmark bench = Benchmark(10, 8, 10, verbose, print_board);
+	Benchmark bench = Benchmark(10, 8, 10, verbose);
 	bench.run();
 	bench.print_results();
 	
 	std::cout << "Medium board (18x14 m=40)" << std::endl;
-	Benchmark bench2 = Benchmark(18, 14, 40, verbose, print_board);
+	Benchmark bench2 = Benchmark(18, 14, 40, verbose);
 	bench2.run();
 	bench2.print_results();
 	
 	std::cout << "Hard board (24x20 m=99)" << std::endl;
-	Benchmark bench3 = Benchmark(24, 20, 99, verbose, print_board);
+	Benchmark bench3 = Benchmark(24, 20, 99, verbose);
 	bench3.run();
 	bench3.print_results();
 
@@ -39,7 +40,7 @@ void Benchmark::run() {
 	for (int i = 0; i < ATTEMPTS; i++) {
 		auto start = std::chrono::high_resolution_clock::now();
 		game = std::make_shared<Virtual>(width, height, mines);
-		Solver solver = Solver(game, verbose, print_board);
+		Solver solver = Solver(game, verbose);
 		SolverResult result = solver.solve();
 
 		// Store run time
