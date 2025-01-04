@@ -45,50 +45,69 @@ static std::set<Move> guess_move(std::shared_ptr<Board> board) {
         return std::set<Move>();
     }
 
-    Tile best_tile = undiscovered[0];
-    double best_score = -1;
-
-    // Cache board dimensions to avoid repeated function calls
+    // Cache board dimensions
     const int board_width = board->get_width();
     const int board_height = board->get_height();
 
-    for (const Tile& t : undiscovered) {
-        double tile_score = 0.0;
-        int valid_neighbors = 0;
+    Tile best_tile = undiscovered[0];
+    double lowest_mine_probability = 1.0;
+    int best_valid_neighbors = 0;
 
-        // Clear vectors instead of reallocating
-		const std::vector<Tile>& surrounding = surrounding_tiles<Tile>(t.x, t.y, board_width, board_height, 
+    // Process each undiscovered tile
+    for (const Tile& t : undiscovered) {
+        double cumulative_prob = 0.0;
+        int valid_neighbors = 0;
+        bool has_info = false;
+
+        // Get surrounding tiles efficiently using the template function
+        const std::vector<Tile>& surrounding = surrounding_tiles<Tile>(t.x, t.y, board_width, board_height,
             [&](int x, int y) { return board->get_tile(x, y); });
 
+        // Analyze each surrounding numbered tile
         for (const Tile& s : surrounding) {
-            // Only consider numbered tiles
-            if (s.value > 0) {
-                const std::vector<Tile>& neighbors = surrounding_tiles<Tile>(s.x, s.y, board_width, board_height,
+            if (s.value > 0) {  // Only consider numbered tiles
+                const std::vector<Tile>& s_neighbors = surrounding_tiles<Tile>(s.x, s.y, board_width, board_height,
                     [&](int x, int y) { return board->get_tile(x, y); });
 
                 int undiscovered_count = 0;
+                bool valid_calculation = true;
                 int remaining_mines = board->remaining_nearby_mines(s);
 
-                for (const Tile& neighbor : neighbors) {
-                    if (neighbor.value == UNKNOWN) {
-                        valid_neighbors = 0;
+                // Count undiscovered neighbors
+                for (const Tile& n : s_neighbors) {
+                    if (n.value == UNKNOWN) {
+                        valid_calculation = false;
                         break;
                     }
-                    if (neighbor.value == UNDISCOVERED) {
+                    if (n.value == UNDISCOVERED) {
                         undiscovered_count++;
                     }
+                }
+
+                // Calculate probability contribution from this numbered tile
+                if (valid_calculation && undiscovered_count > 0) {
+                    double local_prob = static_cast<double>(remaining_mines) / undiscovered_count;
+                    cumulative_prob += local_prob;
+                    valid_neighbors++;
+                    has_info = true;
                 }
             }
         }
 
-        // Only consider tiles with valid numbered neighbors
-        if (valid_neighbors > 0) {
-            // Calculate final score with neighbor bonus
-            const double final_score = (tile_score / valid_neighbors) * (1.0 + (valid_neighbors / 8.0));
+        // Calculate final probability for this tile
+        if (has_info && valid_neighbors > 0) {
+            double avg_probability = cumulative_prob / valid_neighbors;
 
-            if (final_score > best_score) {
+            // Apply neighbor bonus (weighted less heavily than in original)
+            double neighbor_bonus = 1.0 + (valid_neighbors / 12.0);
+            double final_probability = avg_probability / neighbor_bonus;
+
+            // Update best tile if this one has lower probability
+            if (final_probability < lowest_mine_probability ||
+                (final_probability == lowest_mine_probability && valid_neighbors > best_valid_neighbors)) {
+                lowest_mine_probability = final_probability;
                 best_tile = t;
-                best_score = final_score;
+                best_valid_neighbors = valid_neighbors;
             }
         }
     }
