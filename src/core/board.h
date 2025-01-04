@@ -13,6 +13,11 @@ struct Tile {
     Tile() : x(0), y(0), value(UNDISCOVERED) {}
     Tile(int x, int y, int value = UNDISCOVERED) 
         : x(x), y(y), value(value) {}
+
+    bool operator<(const Tile& other) const {
+        // Compare tiles based on their coordinates (or another criteria if needed)
+        return std::tie(x, y) < std::tie(other.x, other.y);
+    }
 };
 
 class Board {

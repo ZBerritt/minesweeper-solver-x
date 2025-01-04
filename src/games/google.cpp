@@ -23,7 +23,7 @@ std::vector<Pixel> Google::generate_sample_points(int x, int y) const {
 }
 
 Google::Google(const Position& pos, const Dimension& board_dim, const Dimension& box_dim) : 
-    Game("Google", board_dim.width / box_dim.width, board_dim.height / box_dim.height, std::chrono::milliseconds(250))
+    Game("Google", board_dim.width / box_dim.width, board_dim.height / box_dim.height, std::chrono::milliseconds(100))
     , position(pos)
     , board_dimensions(board_dim)
     , box_dimensions(box_dim)
