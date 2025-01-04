@@ -37,5 +37,6 @@ public:
 private:
     std::shared_ptr<Game> game;
     std::shared_ptr<BoardDisplay> display;
-	bool verbose;
+    void update_board();
+	void print_move(int x, int y, Action action);
 };

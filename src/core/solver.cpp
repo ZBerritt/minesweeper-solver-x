@@ -112,21 +112,16 @@ static std::set<Move> get_moves(std::shared_ptr<Board> board, bool guess) {
     return moves;
 }
 
-Solver::Solver(std::shared_ptr<Game> g, bool v) : game(g), verbose(v), display(nullptr) {}
+Solver::Solver(std::shared_ptr<Game> g, bool v) : game(g), display(v ? std::make_shared<BoardDisplay>(g->get_board()) : nullptr) {}
 
 SolverResult Solver::solve() {
 	const int failed_cycle_threshould = game->get_failed_cycle_threshold(); // Number of failed cycles before guessing
 	const std::shared_ptr<Board> board = game->get_board();
-    if (verbose) {
-        display = std::make_shared<BoardDisplay>(board);
-    }
     int failed_cycles = 0;
     bool guessing = true;
 
     while (game->status() == IN_PROGRESS) {
-        if (verbose) {
-            display->update_board();
-        }
+        update_board();
         std::set<Move> moves = get_moves(board, guessing);
         if (moves.empty() && guessing) {
             return STUCK;
@@ -138,12 +133,9 @@ SolverResult Solver::solve() {
         else {
             guessing = false;
             for (Move move : moves) {
-                if (verbose) {
-                    display->print(std::string(move.action == CLICK_ACTION ? "Click" : "Flag") 
-                        + ": (" + std::to_string(move.x) + ", " + std::to_string(move.y) + ")");
-                }
+				print_move(move.x, move.y, move.action);
                 if (move.action == FLAG_ACTION) {
-                    game->get_board()->set_tile(move.x, move.y, MINE); 
+                    game->get_board()->set_tile(move.x, move.y, MINE);
                     //game->flag(move.x, move.y); // Commented out for now
                 }
                 else if (move.action == CLICK_ACTION) {
@@ -155,9 +147,20 @@ SolverResult Solver::solve() {
         game->update();
     }
 
-    if (verbose) {
-        display->update_board();
-    }
+	update_board();
 
 	return game->status() == WON ? SUCCESS : FAILURE;
+}
+
+void Solver::update_board() {
+    if (display != nullptr) {
+		display->update_board();
+    }
+}
+
+void Solver::print_move(int x, int y, Action action) {
+    if (display != nullptr) {
+        display->print(std::string(action == CLICK_ACTION ? "Click" : "Flag")
+            + ": (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+    }
 }
