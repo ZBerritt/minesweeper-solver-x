@@ -18,7 +18,6 @@ private:
 	int failures = 0;
 	int timeouts = 0;
 	bool verbose;
-	bool print_board;
 	std::vector<std::chrono::microseconds> run_times;
 	std::vector<double> percent_completion;
 };

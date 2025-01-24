@@ -10,7 +10,6 @@ static const int ATTEMPTS = 2500;
 Benchmark::Benchmark(int w, int h, int m, bool v) : width(w), height(h), mines(m), verbose(v) {}
 
 void Benchmark::full_benchmark(bool verbose) {
-	verbose = false; // TODO: New verbose breaks benchmarking
 	std::cout << "Minesweeper Solver X Algortihm Benchmark:" << std::endl;
 	
 	std::cout << "Easy board (10x8 m=10)" << std::endl;
@@ -27,11 +26,6 @@ void Benchmark::full_benchmark(bool verbose) {
 	Benchmark bench3 = Benchmark(24, 20, 99, verbose);
 	bench3.run();
 	bench3.print_results();
-
-	//std::cout << "Impossible board (50x50 m=625)" << std::endl;
-	//Benchmark bench4 = Benchmark(50, 50, 625, verbose, print_board);
-	//bench4.run();
-	//bench4.print_results();
 }
 
 

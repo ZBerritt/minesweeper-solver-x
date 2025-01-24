@@ -155,7 +155,7 @@ SolverResult Solver::solve() {
 				print_move(move.x, move.y, move.action);
                 if (move.action == FLAG_ACTION) {
                     game->get_board()->set_tile(move.x, move.y, MINE);
-                    //game->flag(move.x, move.y); // Commented out for now
+                    game->flag(move.x, move.y); // Commented out for now
                 }
                 else if (move.action == CLICK_ACTION) {
                     game->click(move.x, move.y);
@@ -179,7 +179,7 @@ void Solver::update_board() {
 
 void Solver::print_move(int x, int y, Action action) {
     if (display != nullptr) {
-        display->print(std::string(action == CLICK_ACTION ? "Click" : "Flag")
+        display->print("[" + std::to_string(++move_number) + "] " + std::string(action == CLICK_ACTION ? "Click" : "Flag")
             + ": (" + std::to_string(x) + ", " + std::to_string(y) + ")");
     }
 }
